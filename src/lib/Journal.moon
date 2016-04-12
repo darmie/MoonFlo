@@ -311,6 +311,6 @@ class Journal extends EventEmitter
 
   save: (file, success) ->
     json = JSON.stringify @toJSON(), nil, 4  --TODO: come up with a moonscript version of JSON.stringify
-    require('fs').writeFile "#{file}.json", json, "utf-8", (err, data) ->
+    require('fs').writeFile "#{file}.json", json, "utf-8", (err, data) ->  --TODO: use lua filesystem
       error err if err
       success file
