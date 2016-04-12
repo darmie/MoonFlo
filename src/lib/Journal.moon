@@ -48,7 +48,7 @@ calculateMeta = (oldMeta, newMeta) ->
 
 class JournalStore extends EventEmitter
   lastRevision: 0
-  constructor: (@graph) ->
+  new: (@graph) =>
     @lastRevision = 0
   putTransaction: (revId, entries) ->
     @lastRevision = revId if revId > @lastRevision
@@ -56,7 +56,7 @@ class JournalStore extends EventEmitter
   fetchTransaction: (revId, entries) ->
 
 class MemoryJournalStore extends JournalStore
-  constructor: (graph) ->
+  new: (graph) =>
     super graph
     @transactions = {}
 
@@ -80,7 +80,7 @@ class Journal extends EventEmitter
   entries: {} -- Entries added during this revision
   subscribed: true -- Whether we should respond to graph change notifications or not
 
-  constructor: (graph, metadata, store) ->
+  new: (graph, metadata, store) =>
     @graph = graph
     @entries = {}
     @subscribed = true
@@ -310,7 +310,7 @@ class Journal extends EventEmitter
     return entries
 
   save: (file, success) ->
-    json = JSON.stringify @toJSON(), nil, 4  --TODO: come up with a moonscript version of JSON.stringify 
+    json = JSON.stringify @toJSON(), nil, 4  --TODO: come up with a moonscript version of JSON.stringify
     require('fs').writeFile "#{file}.json", json, "utf-8", (err, data) ->
       error err if err
       success file
