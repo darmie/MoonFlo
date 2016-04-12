@@ -40,7 +40,7 @@ entryToPrettyString = (entry) ->
 calculateMeta = (oldMeta, newMeta) ->
   setMeta = {}
   for k, v in pairs oldMeta
-    setMeta[k] = null
+    setMeta[k] = nil
   for k, v in pairs newMeta
     setMeta[k] = v
   return setMeta
@@ -204,8 +204,8 @@ class Journal extends EventEmitter
       when 'changeEdge' then @graph.setEdgeMetadata a.from.node, a.from.port, a.to.node, a.to.port, calculateMeta(a.old, a.new)
       when 'addInitial' then @graph.addInitial a.from.data, a.to.node, a.to.port
       when 'removeInitial' then @graph.removeInitial a.to.node, a.to.port
-      when 'startTransaction' then null
-      when 'endTransaction' then null
+      when 'startTransaction' then nil
+      when 'endTransaction' then nil
       when 'changeProperties' then @graph.setProperties a.new
       when 'addGroup' then @graph.addGroup a.name, a.nodes, a.metadata
       when 'renameGroup' then @graph.renameGroup a.oldName, a.newName
@@ -233,8 +233,8 @@ class Journal extends EventEmitter
       when 'changeEdge' then @graph.setEdgeMetadata a.from.node, a.from.port, a.to.node, a.to.port, calculateMeta(a.new, a.old)
       when 'addInitial' then @graph.removeInitial a.to.node, a.to.port
       when 'removeInitial' then @graph.addInitial a.from.data, a.to.node, a.to.port
-      when 'startTransaction' then null
-      when 'endTransaction' then null
+      when 'startTransaction' then nil
+      when 'endTransaction' then nil
       when 'changeProperties' then @graph.setProperties a.old
       when 'addGroup' then @graph.removeGroup a.name
       when 'renameGroup' then @graph.renameGroup a.newName, a.oldName
@@ -306,11 +306,11 @@ class Journal extends EventEmitter
     endRev |= @store.lastRevision
     entries = {}
     for r in [startRev...endRev] by 1  --TODO: Convert this to valid moonscript For-loop
-      entries.push (entryToPrettyString entry) for entry in @store.fetchTransaction r
+      _.push entries, entryToPrettyString entry for entry in @store.fetchTransaction r
     return entries
 
   save: (file, success) ->
-    json = JSON.stringify @toJSON(), null, 4
+    json = JSON.stringify @toJSON(), nil, 4  --TODO: come up with a moonscript version of JSON.stringify 
     require('fs').writeFile "#{file}.json", json, "utf-8", (err, data) ->
-      throw err if err
+      error err if err
       success file
