@@ -1,10 +1,11 @@
 --MoonFlo - Flow-Based Programming for MoonScript
 --@Author Damilare Akinlaja, 2016
 --MoonFlo may be freely distributed under the MIT license
-module "MoonFlo", package.seeall
+module "Journal", package.seeall
 export ^
 {EventEmitter} = require 'events'
-
+_ = require 'moses'
+json = require "cjson"
 clone = require('Utils').clone
 
 entryToPrettyString = (entry) ->
@@ -60,11 +61,11 @@ class MemoryJournalStore extends JournalStore
     super graph
     @transactions = {}
 
-  putTransaction: (revId, entries) ->
+  putTransaction: (revId, entries) =>
     super revId, entries
     @transactions[revId] = entries
 
-  fetchTransaction: (revId) ->
+  fetchTransaction: (revId) =>
     return @transactions[revId]
 
 --- Journalling graph changes
@@ -93,7 +94,12 @@ class Journal extends EventEmitter
       @appendCommand 'addNode', node for node in @graph.nodes
       @appendCommand 'addEdge', edge for edge in @graph.edges
       @appendCommand 'addInitial', iip for iip in @graph.initializers
-      @appendCommand 'changeProperties', @graph.properties, {} if Object.keys(@graph.properties).length > 0  --TODO: Change Object to Table
+
+      object_keys = {}
+      for k,v in pairs @graph.properties
+        _.push(object_keys, k)
+
+      @appendCommand 'changeProperties', @graph.properties, {} if table.getn(object_keys) > 0
       @appendCommand 'addInport', {name: k, port: v} for k,v in pairs @graph.inports
       @appendCommand 'addOutport', {name: k, port: v} for k,v in pairs @graph.outports
       @appendCommand 'addGroup', group for group in @graph.groups
@@ -189,7 +195,7 @@ class Journal extends EventEmitter
     entry =
       cmd: cmd
       args: clone args
-    entry.rev = rev if rev !=nil
+    entry['rev'] = rev if rev !=nil
     _.push @entries, entry
 
   executeEntry: (entry) ->
@@ -257,14 +263,25 @@ class Journal extends EventEmitter
 
     if revId > @currentRevision
       -- Forward replay journal to revId
-      for r in [@currentRevision+1..revId]  --TODO: Convert this to valid moonscript For-loop
+      forward = {}
+      for i= (@currentRevision+1), revId
+        _.push(forward, i)
+      for r in forward
         @executeEntry entry for entry in @store.fetchTransaction r
 
     else
       -- Move backwards, and apply inverse changes
-      for r in [@currentRevision..revId+1] by -1  --TODO: Convert this to valid moonscript For-loop
+      backward = {}
+      for i= @currentRevision, (revId+1)
+        _.push(backward, i)
+      for r in backward
+        r += -1
         entries = @store.fetchTransaction r
-        for i in [entries.length-1..0] by -1  --TODO: Convert this to valid moonscript For-loop
+        placebo ={}
+        for k = (table.getn(entries)-1), 0
+          _.push(placebo, k)
+        for i in placebo
+          i += -1
           @executeEntryInversed entries[i]
 
     @currentRevision = revId
@@ -272,45 +289,54 @@ class Journal extends EventEmitter
 
   -- ---- Undoing & redoing
   -- Undo the last graph change
-  undo: () ->
+  undo: () =>
     return unless @canUndo()
     @moveToRevision(@currentRevision-1)
 
   -- If there is something to undo
-  canUndo: () ->
+  canUndo: () =>
     return @currentRevision > 0
 
   -- Redo the last undo
-  redo: () ->
+  redo: () =>
     return unless @canRedo()
     @moveToRevision(@currentRevision+1)
 
   -- If there is something to redo
-  canRedo: () ->
+  canRedo: () =>
     return @currentRevision < @store.lastRevision
 
   ---- Serializing
   -- Render a pretty printed string of the journal. Changes are abbreviated
-  toPrettyString: (startRev, endRev) ->
-    startRev |= 0
-    endRev |= @store.lastRevision
+  toPrettyString: (startRev, endRev) =>
+    if startRev == nil then startRev = 0
+    if endRev == nil then endRev = @store.lastRevision
     lines = {}
-    for r in [startRev...endRev]  --TODO: Convert this to valid moonscript For-loop
+    placebo = {}
+    for k = startRev, endRev
+      _.push(placebo, k)
+    for r in placebo
       e = @store.fetchTransaction r
       _.push lines, (entryToPrettyString entry) for entry in e
-    return lines.join('\n')
+    return table.concat lines, '\n'
 
   -- Serialize journal to JSON
-  toJSON: (startRev, endRev) ->
-    startRev |= 0
-    endRev |= @store.lastRevision
+  toJSON: (startRev, endRev) =>
+    if startRev == nil then startRev = 0
+    if endRev == nil then endRev = @store.lastRevision
     entries = {}
-    for r in [startRev...endRev] by 1  --TODO: Convert this to valid moonscript For-loop
+    placebo = {}
+    for k = startRev, endRev
+      _.push(placebo, k)
+    for r in placebo
+      r +=1
       _.push entries, entryToPrettyString entry for entry in @store.fetchTransaction r
-    return entries
+    return json.encode entries
 
-  save: (file, success) ->
-    json = JSON.stringify @toJSON(), nil, 4  --TODO: come up with a moonscript version of JSON.stringify
-    require('fs').writeFile "#{file}.json", json, "utf-8", (err, data) ->  --TODO: use lua filesystem
-      error err if err
-      success file
+  save: (file, success) =>
+    tojsonString = @toJSON   ---JSON.stringify @toJSON(), nil, 4
+    file = io.open "#{file}.json", "w"
+    file\write tojsonString
+    ---require('fs').writeFile "#{file}.json", tojsonString, "utf-8", (err, data) ->  --TODO: use lua filesystem
+      ---error err if err
+      --success file
