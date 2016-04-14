@@ -213,7 +213,7 @@ WirePattern = (component, config, proc) ->
   component['params'] = {}
   component['requiredParams'] = {}
   component['completeParams'] = {}
-  component['eceivedParams'] = {}
+  component['receivedParams'] = {}
   component['defaultedParams'] = {}
   component['defaultsSent'] = false
 
