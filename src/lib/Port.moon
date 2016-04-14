@@ -4,7 +4,7 @@
 
 --Regular port for MoonFlo components.
 
-{EventEmitter} = require 'events'
+EventEmitter = require 'events'
 _ = require "moses"
 require 'splice'
 require 'indexOf'

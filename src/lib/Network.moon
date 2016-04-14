@@ -6,7 +6,7 @@
 _ = require "moses"
 internalSocket = require "InternalSocket"
 graph = require "Graph"
-{EventEmitter} = require 'events'
+EventEmitter = require 'events'
 platform = require 'Platform'
 cron = require 'cron'
 require 'splice'

@@ -10,7 +10,7 @@ moon = require "moon"
 module "Ports", package.seeall
 export InPorts, OutPorts
 
-{EventEmitter} = require 'events'
+EventEmitter = require 'events'
 
 InPort = require 'InPort'
 OutPort = require 'OutPort'
