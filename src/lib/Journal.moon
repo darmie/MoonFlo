@@ -338,6 +338,7 @@ class Journal extends EventEmitter
     file = io.open "#{file}.json", "w"
     file\write tojsonString
     file\close!
+    success file
     ---require('fs').writeFile "#{file}.json", tojsonString, "utf-8", (err, data) ->  --TODO: use lua filesystem
       ---error err if err
       --success file

@@ -17,7 +17,7 @@ InternalSocket = require 'InternalSocket'
 
 isArray = (obj) ->
   return _.isArray(obj) if _.isArray
-  return '[object Array]' --Object.prototype.toString.call(arg) == '[object Array]'
+  --return '[object Array]' --Object.prototype.toString.call(arg) == '[object Array]'
 
 -- MapComponent maps a single inport to a single outport, forwarding all
 -- groups from in to out and calling `func` on each incoming packet
@@ -284,7 +284,8 @@ WirePattern = (component, config, proc) ->
     component['gcCounter'] += 1
     if component['gcCounter'] % config['gcFrequency'] == 0
       current = os.time()
-      for key, val in component['gcTimestamps']
+      for key in component['gcTimestamps']
+        val = component['gcTimestamps'][key]
         if (current - val) > (config['gcTimeout'] * 1000)
           component\dropRequest key
           table.remove(component['gcTimestamps'], key)
@@ -484,17 +485,18 @@ WirePattern = (component, config, proc) ->
               if table.getn(component['disconnectQ']) > 0
                 _.pop component['disconnectQ']
                 disconnect = true
-              for name, out in outputs
+              for name in outputs
+                out = outputs[name]
                 for i in whenDoneGroups
                   if config['forwardGroups'] and config['async']
                     out.endGroup()
                 out.disconnect() if disconnect
-                out.done() if config.async or config['StreamSender']
+                out.done() if config['async'] or config['StreamSender']
               if type(component['afterProcess']) == 'function'
-                component.afterProcess err or component.hasErrors, outs
+                component.afterProcess err or component['hasErrors'], outs
 
             -- Before hook
-            if type(component.beforeProcess) == 'function'
+            if type(component['beforeProcess']) == 'function'
               component.beforeProcess outs
 
             -- Group forwarding
@@ -502,7 +504,8 @@ WirePattern = (component, config, proc) ->
               if table.getn(outPorts) == 1
                 outs.beginGroup g for g in groups
               else
-                for name, out in outs
+                for name in outs
+                  out = outs[name]
                   out.beginGroup g for g in groups
 
             -- Enforce MultiError with WirePattern (for group forwarding)
