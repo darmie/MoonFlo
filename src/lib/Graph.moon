@@ -843,27 +843,33 @@ export loadJSON = (definition, callback, metadata = {}) ->
         portId = exported['port'].toLowerCase()
       graph\addExport exported['public'], processId, portId, exported['metadata']
 
-  if definition.inports
-    for pub, priv of definition.inports
-      graph.addInport pub, priv.process, priv.port.toLowerCase(), priv.metadata
-  if definition.outports
-    for pub, priv of definition.outports
-      graph.addOutport pub, priv.process, priv.port.toLowerCase(), priv.metadata
+  if definition['inports']
+    for pub in definition['inports']
+      priv = definition['inports'][pub]
+      graph.addInport pub, priv['process'], priv['port'].toLowerCase(), priv['metadata']
+  if definition['outports']
+    for pub in definition['outports']
+      priv = definition['outports'][pub]
+      graph.addOutport pub, priv['process'], priv['port'].toLowerCase(), priv['metadata']
 
-  if definition.groups
-    for group in definition.groups
-      graph.addGroup group.name, group.nodes, group.metadata || {}
+  if definition['groups']
+    for group in definition['groups']
+      if group['metadata']
+        graph.addGroup group['name'], group['nodes'], group['metadata']
+      else
+        graph.addGroup group['name'], group['nodes'], {}
 
   graph.endTransaction 'loadJSON'
 
   callback nil, graph
 
 export loadFBP = (fbpData, callback) ->
-  try
-    definition = require('fbp').parse fbpData
-  catch e
-    return callback e
-  exports.loadJSON definition, callback
+  --try
+  definition, err = require('fbp').parse fbpData
+    if err then return callback err
+  --catch e
+    --return callback e
+  loadJSON definition, callback
 
 export loadHTTP = (url, callback) ->
   req = new XMLHttpRequest
@@ -876,30 +882,37 @@ export loadHTTP = (url, callback) ->
   req.send()
 
 export loadFile = (file, callback, metadata = {}) ->
-  if platform.isBrowser()
-    try
+  --if platform.isBrowser()
+    --try
       -- Graph exposed via Component packaging
-      definition = require file
-    catch e
+  definition, err = require file
+    --catch e
       -- Graph available via HTTP
-      exports.loadHTTP file, (err, data) ->
+  if err
+      loadHTTP file, (err, data) ->
         return callback err if err
-        if file.split('.').pop() is 'fbp'
-          return exports.loadFBP data, callback, metadata
-        definition = JSON.parse data
-        exports.loadJSON definition, callback, metadata
+        if _.pop(split(file,'.')) == 'fbp'
+          return loadFBP data, callback, metadata
+        definition =  data
+        loadJSON definition, callback, metadata
       return
-    exports.loadJSON definition, callback, metadata
-    return
+  loadJSON definition, callback, metadata
+  return
   -- Node.js graph file
-  require('fs').readFile file, "utf-8", (err, data) ->
-    return callback err if err
+  file = io.open file, "r"
+  data, err = file\read(*a)
+  file\close!
+  --callback data
+  if err
+    callback err
+  --require('fs').readFile file, "utf-8", (err, data) ->
+    --return callback err if err
+  elseif data
+    if _.pop(split(file,'.')) == 'fbp'
+      return loadFBP data, callback
 
-    if file.split('.').pop() is 'fbp'
-      return exports.loadFBP data, callback
-
-    definition = JSON.parse data
-    exports.loadJSON definition, callback
+    definition = data
+    loadJSON definition, callback
 
 -- remove everything in the graph
 resetGraph = (graph) ->
@@ -907,49 +920,53 @@ resetGraph = (graph) ->
   -- Edges and similar first, to have control over the order
   -- If we'd do nodes first, it will implicitly delete edges
   -- Important to make journal transactions invertible
-  for group in (clone graph.groups).reverse()
-    graph.removeGroup group.name if group?
-  for port, v of clone graph.outports
-    graph.removeOutport port
-  for port, v of clone graph.inports
-    graph.removeInport port
-  for exp in clone (graph.exports).reverse()
-    graph.removeExport exp.public
+  for group in _.reverse(clone graph['groups'])
+    graph\removeGroup group['name'] if group == nil
+  for port in clone graph['outports']
+    v = (clone graph['outports'])[port]
+    graph\removeOutport port
+  for port in clone graph['inports']
+    v = (clone graph['inports'])[port]
+    graph\removeInport port
+  for exp in _.reverse(clone graph.exports)
+    graph\removeExport exp['public']
   -- XXX: does this actually nil the props??
-  graph.setProperties {}
-  for iip in (clone graph.initializers).reverse()
-    graph.removeInitial iip.to.node, iip.to.port
-  for edge in (clone graph.edges).reverse()
-    graph.removeEdge edge.from.node, edge.from.port, edge.to.node, edge.to.port
-  for node in (clone graph.nodes).reverse()
-    graph.removeNode node.id
+  graph\setProperties {}
+  for iip in _.reverse(clone graph.initializers)
+    graph\removeInitial iip['to']['node'], iip['to']['port']
+  for edge in _.reverse(clone graph.edges)
+    graph\removeEdge edge['from']['node'], edge['from']['port'], edge['to']['node'], edge['to']['port']
+  for node in _.reverse(clone graph.nodes)
+    graph\removeNode node['id']
 
 -- Note: Caller should create transaction
 -- First removes everything in @base, before building it up to mirror @to
-mergeResolveTheirsNaive = (base, to) ->
+mergeResolveTheirsNaive = (base, to) =>
   resetGraph base
 
-  for node in to.nodes
-    base.addNode node.id, node.component, node.metadata
-  for edge in to.edges
-    base.addEdge edge.from.node, edge.from.port, edge.to.node, edge.to.port, edge.metadata
-  for iip in to.initializers
-    base.addInitial iip.from.data, iip.to.node, iip.to.port, iip.metadata
-  for exp in to.exports
-    base.addExport exp.public, exp.node, exp.port, exp.metadata
-  base.setProperties to.properties
-  for pub, priv of to.inports
-    base.addInport pub, priv.process, priv.port, priv.metadata
-  for pub, priv of to.outports
-    base.addOutport pub, priv.process, priv.port, priv.metadata
-  for group in to.groups
-    base.addGroup group.name, group.nodes, group.metadata
+  for node in to['nodes']
+    base.addNode node['id'], node['component'], node['metadata']
+  for edge in to['edges']
+    base.addEdge edge['from']['node'], edge['from']['port'], edge['to']['node'], edge['to']['port'], edge['metadata']
+  for iip in to['initializers']
+    base.addInitial iip['from']['data'], iip['to']['node'], iip['to']['port'], iip['metadata']
+  for exp in to['exports']
+    base.addExport exp['public'], exp['node'], exp['port'], exp['metadata']
+  base.setProperties to['properties']
+  for pub in to['inports']
+    priv = to['inports'][pub]
+    base.addInport pub, priv['process'], priv['port'], priv['metadata']
+  for pub in to['outports']
+    priv = to['outports'][pub]
+    base.addOutport pub, priv['process'], priv['port'], priv['metadata']
+  for group in to['groups']
+    base.addGroup group['name'], group['nodes'], group['metadata']
 
-export equivalent = (a, b, options = {}) ->
+export equivalent = (a, b, options = {}) =>
   -- TODO: add option to only compare known fields
   -- TODO: add option to ignore metadata
-  A = JSON.stringify a
-  B = JSON.stringify b
+  A = JSON.stringify a -- find a way to stringify a table
+  B = JSON.stringify b -- find a way to stringify a tab;e
   return A == B
 
 export mergeResolveTheirs = mergeResolveTheirsNaive
