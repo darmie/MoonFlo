@@ -928,15 +928,15 @@ resetGraph = (graph) ->
   for port in clone graph['inports']
     v = (clone graph['inports'])[port]
     graph\removeInport port
-  for exp in _.reverse(clone graph.exports)
+  for exp in _.reverse(clone graph['exports'])
     graph\removeExport exp['public']
   -- XXX: does this actually nil the props??
   graph\setProperties {}
-  for iip in _.reverse(clone graph.initializers)
+  for iip in _.reverse(clone graph['initializers'])
     graph\removeInitial iip['to']['node'], iip['to']['port']
   for edge in _.reverse(clone graph.edges)
     graph\removeEdge edge['from']['node'], edge['from']['port'], edge['to']['node'], edge['to']['port']
-  for node in _.reverse(clone graph.nodes)
+  for node in _.reverse(clone graph['nodes'])
     graph\removeNode node['id']
 
 -- Note: Caller should create transaction
