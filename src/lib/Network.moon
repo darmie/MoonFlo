@@ -200,7 +200,7 @@ class Network extends EventEmitter
           return done err if err
           callStack +=1
           if callStack % 100 == 0
-            cron.after 0, next type
+            cron.after 0, ()=> next type
             --setTimeout -> next type, 0
             return
           next type
@@ -520,7 +520,7 @@ class Network extends EventEmitter
 
     if type(process) != 'undefined' and process.execPath and _.indexOf(process.execPath, 'node') != -1
       --nextTick is faster on Node.js
-      process.nextTick send
+      process\nextTick send
     else
       cron.after(0, send)
 
