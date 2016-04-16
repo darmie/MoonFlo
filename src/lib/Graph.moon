@@ -872,7 +872,7 @@ export loadFBP = (fbpData, callback) ->
   loadJSON definition, callback
 
 export loadHTTP = (url, callback) ->
-  req = new XMLHttpRequest
+  req = XMLHttpRequest
   req.onreadystatechange = ->
     return unless req.readyState is 4
     unless req.status is 200
@@ -945,22 +945,22 @@ mergeResolveTheirsNaive = (base, to) =>
   resetGraph base
 
   for node in to['nodes']
-    base.addNode node['id'], node['component'], node['metadata']
+    base\addNode node['id'], node['component'], node['metadata']
   for edge in to['edges']
-    base.addEdge edge['from']['node'], edge['from']['port'], edge['to']['node'], edge['to']['port'], edge['metadata']
+    base\addEdge edge['from']['node'], edge['from']['port'], edge['to']['node'], edge['to']['port'], edge['metadata']
   for iip in to['initializers']
-    base.addInitial iip['from']['data'], iip['to']['node'], iip['to']['port'], iip['metadata']
+    base\addInitial iip['from']['data'], iip['to']['node'], iip['to']['port'], iip['metadata']
   for exp in to['exports']
-    base.addExport exp['public'], exp['node'], exp['port'], exp['metadata']
-  base.setProperties to['properties']
+    base\addExport exp['public'], exp['node'], exp['port'], exp['metadata']
+  base\setProperties to['properties']
   for pub in to['inports']
     priv = to['inports'][pub]
-    base.addInport pub, priv['process'], priv['port'], priv['metadata']
+    base\addInport pub, priv['process'], priv['port'], priv['metadata']
   for pub in to['outports']
     priv = to['outports'][pub]
-    base.addOutport pub, priv['process'], priv['port'], priv['metadata']
+    base\addOutport pub, priv['process'], priv['port'], priv['metadata']
   for group in to['groups']
-    base.addGroup group['name'], group['nodes'], group['metadata']
+    base\addGroup group['name'], group['nodes'], group['metadata']
 
 export equivalent = (a, b, options = {}) =>
   -- TODO: add option to only compare known fields
