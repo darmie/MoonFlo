@@ -29,8 +29,8 @@ class Substream
     table.insert @value, value
   sendTo: (port) =>
     port.beginGroup @key
-    for ip in *@value
-      if ip.__class.__name == Substream.__name or ip.__class.__name == IP.__name
+    for ip in @value
+      if ip.__class == Substream or ip.__class == IP
         ip.sendTo port
       else
         port.send ip

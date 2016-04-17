@@ -31,7 +31,7 @@ class ArrayPort extends port.Port
     @sockets[socketId]\connect()
 
   beginGroup: (group, socketId = nil) ->
-    if socketId is nil
+    if socketId == nil
       unless table.getn @sockets
         error "#{@getId()}: No connections available"
       _.each @sockets, (index, socket) =>
@@ -93,7 +93,7 @@ class ArrayPort extends port.Port
     @sockets[socketId]\disconnect()
 
   isConnected: (socketId = nil) ->
-    if socketId is nil
+    if socketId == nil
       connected = false
       _.each @sockets, (key ,socket) =>
         return unless socket

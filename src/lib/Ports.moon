@@ -33,7 +33,7 @@ class Ports extends EventEmitter
     --Remove previous implementation
     @remove name if @ports[name]
 
-    if type(options) == 'table' and options.canAttach
+    if type(options) == 'table' and options['canAttach']
       @ports[name] = options
     else
       @ports[name] = @model options, process

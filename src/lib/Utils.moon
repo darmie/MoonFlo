@@ -11,11 +11,11 @@ module "Utils", package.seeall
 export clone, guessLanguageFromFilename
 
 clone = (obj)->
-  unless moon.type(obj) != 'table'
+  unless type(obj) != 'table'
     return obj
 
   if obj.__parent == moon.Date
-    return moon.Date(obj/getTime)
+    return os.date(os.time)
 
 
   newInstance = moon.bind_methods obj
