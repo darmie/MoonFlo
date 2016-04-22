@@ -1,6 +1,4 @@
-module("split", package.seeall)
-
-split = function(str, pat)
+local split = function(str, pat)
     local t = {}
     local fpat = "(.-)" ..pat
     local last_end = 1
@@ -18,3 +16,5 @@ split = function(str, pat)
     end
     return t
 end
+
+return split 

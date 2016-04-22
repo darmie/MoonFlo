@@ -2,6 +2,7 @@
 
 
 class Error
+
   new: (message)=>
     error message
 
