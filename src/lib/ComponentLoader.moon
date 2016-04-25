@@ -252,10 +252,10 @@ class ComponentLoader extends EventEmitter
       --return callback e
 
       if language == "moonscript"
-        implementation, err = moonscript.loadstring source
+        implementation, err = moonscript.loadstring src
         return err
       elseif language == "lua"
-        implementation, err = load source
+        implementation, err = load src
         return err
     unless implementation() or implementation().getComponent
       return callback Error 'Provided source failed to create a runnable component'
@@ -293,8 +293,8 @@ class ComponentLoader extends EventEmitter
         return callback err if err
         return callback Error 'Unable to load graph' unless graph
         callback nil,
-          name: nameParts[1]
-          library: nameParts[0]
+          name: nameParts[2]
+          library: nameParts[1]
           code: json.decode graph.toJSON()
           language: 'json'
       return
@@ -303,8 +303,8 @@ class ComponentLoader extends EventEmitter
     unless path
       return callback Error "Component #{name} is not resolvable to a path"
     callback nil,
-      name: nameParts[1]
-      library: nameParts[0]
+      name: nameParts[2]
+      library: nameParts[1]
       code: window.require.modules[path].toString() --TODO: Lua equivalent
       language: utils.guessLanguageFromFilename component
 

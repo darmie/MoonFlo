@@ -116,7 +116,7 @@ class ProcessInput
     not (_.contains(@result , '__resolved'))
       @activate!
     res = (@ports[port]\get @scope for port in arguments)
-    if table.getn(arguments) == 1 then res[0] else res
+    if table.getn(arguments) == 1 then res[1] else res
 
   getData: =>
     ips = @get\apply @, arguments
@@ -148,7 +148,7 @@ class ProcessOutput
 
   isError: (err) ->
     if err.__class == Error or
-    _.isArray(err) and table.getn(err) > 1 and err[0].__class == Error
+    _.isArray(err) and table.getn(err) > 1 and err[1].__class == Error
         return true
     return false
     --err instanceof Error or

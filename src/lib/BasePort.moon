@@ -4,7 +4,9 @@
 --     MoonFlo may be freely distributed under the MIT license
 --Base port type used for options normalization
 EventEmitter = require 'events'
-
+_ = require "moses"
+Allen = require "Allen"
+Allen.import()
 validTypes = {
   'all'
   'string'
@@ -44,7 +46,7 @@ class BasePort extends EventEmitter
   getId: =>
     unless @node and @name
       return 'Port'
-    "#{@node} #{@name.toUpperCase()}" --TODO: find Lua alternative to tpUppercase
+    "#{@node} #{string.capitalize(@name)}" 
 
   getDataType: => @options['datatype']
   getDescription: => @options['description']

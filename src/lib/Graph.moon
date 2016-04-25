@@ -6,6 +6,11 @@ EventEmitter = require 'events'
 
 clone = require('Utils').clone
 platform = require 'Platform'
+splice = require 'splice'
+_ = require "moses"
+json = require "cjson"
+Allen = require "Allen"
+Allen.import()
 
 -- This class represents an abstract NoFlo graph containing nodes
 -- connected to each other with edges.
@@ -99,17 +104,17 @@ class Graph extends EventEmitter
     @checkTransactionStart()
 
     exported =
-      public: publicPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+      public: string.lower(publicPort)
       process: nodeKey
-      port: portKey.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+      port: string.lower portKey
       metadata: metadata
-    @exports.push exported
+    _.push @exports, exported
     @emit 'addExport', exported
 
     @checkTransactionEnd()
 
   removeExport: (publicPort) =>
-    publicPort = publicPort.toLowerCase()  --TODO: find lua equivalent of toLowerCase()
+    publicPort = string.lower publicPort
     found = nil
     for exported, idx in @exports
       found = exported if exported['public'] == publicPort
@@ -124,39 +129,39 @@ class Graph extends EventEmitter
     -- Check that node exists
     return unless @getNode nodeKey
 
-    publicPort = publicPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+    publicPort = string.lower publicPort
     @checkTransactionStart()
     @inports[publicPort] =
       process: nodeKey
-      port: portKey.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+      port: @exports portKey
       metadata: metadata
     @emit 'addInport', publicPort, @inports[publicPort]
     @checkTransactionEnd()
 
   removeInport: (publicPort) =>
-    publicPort = publicPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+    publicPort = @exports publicPort
     return unless @inports[publicPort]
 
     @checkTransactionStart()
     port = @inports[publicPort]
     @setInportMetadata publicPort, {}
-    delete @inports[publicPort]
+    table.remove @inports , publicPort
     @emit 'removeInport', publicPort, port
     @checkTransactionEnd()
 
   renameInport: (oldPort, newPort) =>
-    oldPort = oldPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
-    newPort = newPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+    oldPort = string.lower oldPort
+    newPort = string.lower newPort
     return unless @inports[oldPort]
 
     @checkTransactionStart()
     @inports[newPort] = @inports[oldPort]
-    delete @inports[oldPort]
+    table.remove @inports, oldPort
     @emit 'renameInport', oldPort, newPort
     @checkTransactionEnd()
 
   setInportMetadata: (publicPort, metadata) =>
-    publicPort = publicPort.toLowerCase() --TODO: find lua equivalent of toLowerCase()
+    publicPort = string.lower publicPort
     return unless @inports[publicPort]
 
     @checkTransactionStart()
@@ -174,18 +179,18 @@ class Graph extends EventEmitter
     -- Check that node exists
     return unless @getNode nodeKey
 
-    publicPort = publicPort.toLowerCase()
+    publicPort = string.lower publicPort
     @checkTransactionStart()
     @outports[publicPort] =
       process: nodeKey
-      port: portKey.toLowerCase()
+      port: string.lower portKey
       metadata: metadata
     @emit 'addOutport', publicPort, @outports[publicPort]
 
     @checkTransactionEnd()
 
   removeOutport: (publicPort) =>
-    publicPort = publicPort.toLowerCase()
+    publicPort = string.lower publicPort
     return unless @outports[publicPort]
 
     @checkTransactionStart()
@@ -198,8 +203,8 @@ class Graph extends EventEmitter
     @checkTransactionEnd()
 
   renameOutport: (oldPort, newPort) =>
-    oldPort = oldPort.toLowerCase()
-    newPort = newPort.toLowerCase()
+    oldPort = string.lower oldPort
+    newPort = string.lower newPort
     return unless @outports[oldPort]
 
     @checkTransactionStart()
@@ -209,7 +214,7 @@ class Graph extends EventEmitter
     @checkTransactionEnd()
 
   setOutportMetadata: (publicPort, metadata) =>
-    publicPort = publicPort.toLowerCase()
+    publicPort = string.lower publicPort
     return unless @outports[publicPort]
 
     @checkTransactionStart()
@@ -330,7 +335,7 @@ class Graph extends EventEmitter
 
     toRemove = {}
     for exported in @exports
-      if id.toLowerCase() == exported['process']
+      if string.lower(id) == exported['process']
         _.push toRemove, exported
     for exported in toRemove
       @removeExport exported['public']
@@ -452,8 +457,8 @@ class Graph extends EventEmitter
   --
   -- Adding an edge will emit the `addEdge` event.
   addEdge: (outNode, outPort, inNode, inPort, metadata = {}) =>
-    outPort = outPort.toLowerCase()
-    inPort = inPort.toLowerCase()
+    outPort = string.lower outPort
+    inPort = string.lower inPort
     for edge in @edges
       -- don't add a duplicate edge
       return if (edge['from']['node'] == outNode and edge['from']['port'] == outPort and edge['to']['node'] == inNode and edge['to']['port'] == inPort)
@@ -481,8 +486,8 @@ class Graph extends EventEmitter
     return unless @getNode outNode
     return unless @getNode inNode
 
-    outPort = outPort.toLowerCase()
-    inPort = inPort.toLowerCase()
+    outPort = string.lower outPort
+    inPort = string.lower inPort
 
     inIndex = undefined if inIndex == nil
     outIndex = undefined if outIndex == nil
@@ -516,8 +521,8 @@ class Graph extends EventEmitter
   -- Removing a connection will emit the `removeEdge` event.
   removeEdge: (node, port, node2, port2) =>
     @checkTransactionStart()
-    port = port.toLowerCase()
-    port2 = port2.toLowerCase()
+    port = string.lower port
+    port2 =  string.lower port2
     toRemove = {}
     toKeep = {}
     if node2 and port2
@@ -547,8 +552,8 @@ class Graph extends EventEmitter
   --
   --     myEdge = myGraph.getEdge 'Read', 'out', 'Write', 'in'
   getEdge: (node, port, node2, port2) =>
-    port = port.toLowerCase()
-    port2 = port2.toLowerCase()
+    port = string.lower port
+    port2 = string.lower port2
     for edge,index in pairs @edges
       continue unless edge
       if edge['from']['node'] == node and edge['from']['port'] == port
@@ -599,7 +604,7 @@ class Graph extends EventEmitter
   addInitial: (data, node, port, metadata) =>
     return unless @getNode node
 
-    port = port.toLowerCase()
+    port = string.lower port
     @checkTransactionStart()
     initializer =
       from:
@@ -618,7 +623,7 @@ class Graph extends EventEmitter
     return unless @getNode node
     index = nil if index == nil
 
-    port = port.toLowerCase()
+    port = string.lower port
     @checkTransactionStart()
     initializer =
       from:
@@ -658,7 +663,7 @@ class Graph extends EventEmitter
   --
   -- Remove an IIP will emit a `removeInitial` event.
   removeInitial: (node, port) =>
-    port = port.toLowerCase()
+    port = string.lower port
     @checkTransactionStart()
 
     toRemove = {}
@@ -816,19 +821,20 @@ export loadJSON = (definition, callback, metadata = {}) ->
     metadata = if conn['metadata'] then conn['metadata'] else {}
     if conn['data'] != undefined
       if type(conn['tgt']['index']) == 'number'
-        graph\addInitialIndex conn['data'], conn['tgt']['process'], conn['tgt']['port'].toLowerCase(), conn['tgt']['index'], metadata
+        graph\addInitialIndex conn['data'], conn['tgt']['process'], string.lower (conn['tgt']['port']), conn['tgt']['index'], metadata
       else
-        graph.addInitial conn['data'], conn['tgt']['process'], conn['tgt']['port'].toLowerCase(), metadata
+        graph.addInitial conn['data'], conn['tgt']['process'], string.lower (conn['tgt']['port']), metadata
       continue
     if type(conn['src']['index']) == 'number' or type(conn['tgt']['index'] == 'number'
-      graph\addEdgeIndex conn['src']['process'], conn['src']['port'].toLowerCase(), conn['src']['index'], conn['tgt']['process'], conn['tgt']['port'].toLowerCase(), conn['tgt']['index'], metadata
+      graph\addEdgeIndex conn['src']['process'], string.lower (conn['src']['port']), conn['src']['index'], conn['tgt']['process'], string.lower(conn['tgt']['port']), conn['tgt']['index'], metadata
       continue
-    graph\addEdge conn['src']['process'], conn['src']['port'].toLowerCase(), conn['tgt']['process'], conn['tgt']['port'].toLowerCase(), metadata
+    graph\addEdge conn['src']['process'], string.lower(conn['src']['port']), conn['tgt']['process'], string.lower(conn['tgt']['port']), metadata
 
   if definition['exports'] and table.getn definition['exports']
     for exported in definition['exports']
       if exported['private']
         -- Translate legacy ports to new
+        split = require "split"
         split = split(exported['private'],'.')
         continue unless table.getn(split) == 2
         processId = split[1]
@@ -836,21 +842,21 @@ export loadJSON = (definition, callback, metadata = {}) ->
 
         -- Get properly cased process id
         for id in definition.processes
-          if id.toLowerCase() == processId.toLowerCase()
+          if string.lower(id) == string.lower(processId)
             processId = id
       else
         processId = exported['process']
-        portId = exported['port'].toLowerCase()
+        portId = string.lower exported['port']
       graph\addExport exported['public'], processId, portId, exported['metadata']
 
   if definition['inports']
     for pub in definition['inports']
       priv = definition['inports'][pub]
-      graph.addInport pub, priv['process'], priv['port'].toLowerCase(), priv['metadata']
+      graph.addInport pub, priv['process'], string.lower(priv['port']), priv['metadata']
   if definition['outports']
     for pub in definition['outports']
       priv = definition['outports'][pub]
-      graph.addOutport pub, priv['process'], priv['port'].toLowerCase(), priv['metadata']
+      graph.addOutport pub, priv['process'], string.lower(priv['port']), priv['metadata']
 
   if definition['groups']
     for group in definition['groups']
@@ -908,6 +914,7 @@ export loadFile = (file, callback, metadata = {}) ->
   --require('fs').readFile file, "utf-8", (err, data) ->
     --return callback err if err
   elseif data
+    split = require "split"
     if _.pop(split(file,'.')) == 'fbp'
       return loadFBP data, callback
 
@@ -965,8 +972,8 @@ mergeResolveTheirsNaive = (base, to) =>
 export equivalent = (a, b, options = {}) =>
   -- TODO: add option to only compare known fields
   -- TODO: add option to ignore metadata
-  A = JSON.stringify a -- find a way to stringify a table
-  B = JSON.stringify b -- find a way to stringify a tab;e
+  A = json.encode a --JSON.stringify a -- find a way to stringify a table
+  B = json.encode b --JSON.stringify b -- find a way to stringify a tab;e
   return A == B
 
 export mergeResolveTheirs = mergeResolveTheirsNaive

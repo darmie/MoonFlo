@@ -76,7 +76,7 @@ class AsyncComponent extends component.Component
       return
     processedData = false
     while table.getn(@q) > 0
-      event = @q[0]
+      event = @q[1]
       switch event['name']
         when "begingroup"
           return if processedData
