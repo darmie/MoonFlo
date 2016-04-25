@@ -1,12 +1,14 @@
 --MoonFlo - Flow-Based Programming for MoonScript
 --@Author Damilare Akinlaja, 2016
 --MoonFlo may be freely distributed under the MIT license
-module "Journal", package.seeall
-export ^
+--module "Journal", package.seeall
+exports = {}
 EventEmitter = require 'events'
 _ = require 'moses'
 json = require "cjson"
 clone = require('Utils').clone
+
+Error = require "Error"
 
 entryToPrettyString = (entry) ->
   a = entry['args']
@@ -35,7 +37,7 @@ entryToPrettyString = (entry) ->
     when 'removeOutport' then "DEL OUTPORT #{a['name']}"
     when 'renameOutport' then "RENAME OUTPORT #{a['oldId']} #{a['newId']}"
     when 'changeOutport' then "META OUTPORT #{a['name']}"
-    else error("Unknown journal entry: #{entry['cmd']}")
+    else Error("Unknown journal entry: #{entry['cmd']}")
 
 -- To set, not just update (append) metadata
 calculateMeta = (oldMeta, newMeta) ->
@@ -87,7 +89,7 @@ class Journal extends EventEmitter
     @subscribed = true
     @store = store or MemoryJournalStore @graph
 
-    if table.getn @store.transactions is 0
+    if table.getn(@store.transactions) == 0
       -- Sync journal with current graph to start transaction history
       @currentRevision = -1
       @startTransaction 'initial', metadata
@@ -342,3 +344,6 @@ class Journal extends EventEmitter
     ---require('fs').writeFile "#{file}.json", tojsonString, "utf-8", (err, data) ->  --TODO: use lua filesystem
       ---error err if err
       --success file
+_.push exports, :JournalStore, :MemoryJournalStore
+
+return exports

@@ -10,11 +10,15 @@ EventEmitter = require 'events'
 platform = require 'Platform'
 cron = require 'cron'
 require 'splice'
+Error = require "Error"
+Allen = require "Allen"
+Allen.import()
 --require 'indexOf'
 componentLoader = require 'ComponentLoader'
 
-module "Streams", package.seeall
-export Network
+exports = {}
+--module "Streams", package.seeall
+
 ---- The MoonFlo network coordinator
 --
 --MoonFlo networks consist of processes connected to each other
@@ -81,7 +85,7 @@ class Network extends EventEmitter
   --time, in seconds.
   uptime: =>
     return 0 unless @startupDate
-      -- (Date() - @startupDate)  --TODO: current Lua os.time minus  startup time in seconds
+    os.time() - @startupDate
 
   --Emit a 'start' event on the first connection, and 'end' event when
   --last connection has been closed
@@ -96,7 +100,7 @@ class Network extends EventEmitter
     --Last connection closed, execution has now ended
     --We do this in debounced way in case there is an in-flight operation still
     unless @debouncedEnd
-      @debouncedEnd = _.debounce => return if @connectionCount @setStarted false, 50
+      @debouncedEnd = _.debounce => return if @connectionCount @setStarted false, 50  --TODO: find alternative to _.debounce currently not available in moses
     do @debouncedEnd
 
   ---- Loading components
@@ -139,13 +143,13 @@ class Network extends EventEmitter
       process.component = instance
 
       --Inform the ports of the node name
-      for name, port in pairs(process.component.inPorts)
+      for name, port in pairs(process['component']['inPorts'])
         continue if not port or type (port) == 'function' or not port.canAttach
         port.node = node.id
         port.nodeInstance = instance
         port.name = name
 
-      for name, port in pairs(process.component.outPorts)
+      for name, port in pairs(process['component']['outPorts'])
         continue if not port or type(port) == 'function' or not port.canAttach
         port.node = node.id
         port.nodeInstance = instance
@@ -161,22 +165,22 @@ class Network extends EventEmitter
 
   removeNode: (node, callback) =>
     unless @processes[node.id]
-      return callback   Error "Node --{node.id} not found"
+      return callback   Error "Node #{node.id} not found"
     @processes[node.id].component.shutdown()
     delete @processes[node.id]
     callback nil if callback
 
   renameNode: (oldId,  Id, callback) =>
     process = @getNode oldId
-    return callback   Error "Process --{oldId} not found" unless process
+    return callback   Error "Process #{oldId} not found" unless process
 
     --Inform the process of its ID
     process.id = newId
 
     --Inform the ports of the node name
-    for name, port in pairs process.component.inPorts
+    for name, port in pairs process['component']['inPorts']
       port.node = newId
-    for name, port in pairs process.component.outPorts
+    for name, port in pairs process['component']['outPorts']
       port.node = newId
 
     @processes[newId] = process
@@ -187,7 +191,7 @@ class Network extends EventEmitter
   getNode: (id) =>
     @processes[id]
 
-  connect: (done = ->) ->
+  connect: (done = ->) =>
     --Wrap the future which will be called when done in a function and return
     --it
     callStack = 0
@@ -195,7 +199,7 @@ class Network extends EventEmitter
       (type) =>
         --Add either a Node, an Initial, or an Edge and move on to the next one
         --when done
-        @["add--{type}"] add, (err) ->
+        @["add#{type}"] add, (err) ->
           print err if err
           return done err if err
           callStack +=1
@@ -231,25 +235,25 @@ class Network extends EventEmitter
         port: port
         index: index
 
-      unless process.component.inPorts and process.component.inPorts[port]
-        error   Error "No inport '--{port}' defined in process --{process.id} (--{socket.getId()})"
+      unless process['component']['inPorts'] and process['component']['inPorts'][port]
+        Error "No inport '#{port}' defined in process #{process.id} (#{socket.getId()})"
         return
-      if process.component.inPorts[port].isAddressable()
-        return process.component.inPorts[port].attach socket, index
-      return process.component.inPorts[port].attach socket
+      if process['component']['inPorts'][port].isAddressable()
+        return process['component']['inPorts'][port].attach socket, index
+      return process['component']['inPorts'][port].attach socket
 
     socket.from =
       process: process
       port: port
       index: index
 
-    unless process.component.outPorts and process.component.outPorts[port]
-      error   Error "No outport '--{port}' defined in process --{process.id} (--{socket.getId()})"
+    unless process['component']['outPorts'] and process['component']['outPorts'][port]
+      Error "No outport '#{port}' defined in process #{process.id} (#{socket.getId()})"
       return
 
-    if process.component.outPorts[port].isAddressable()
-      return process.component.outPorts[port].attach socket, index
-    process.component.outPorts[port].attach socket
+    if process['component']['outPorts'][port].isAddressable()
+      return process['component']['outPorts'][port].attach socket, index
+    process['component']['outPorts'][port].attach socket
 
   subscribeGraph: =>
     --A MoonFlo graph may change after network initialization.
@@ -261,19 +265,19 @@ class Network extends EventEmitter
     graphOps = {}
     processing = false
     registerOp = (op, details) ->
-      graphOps.push
+      _.push graphOps,
         op: op
         details: details
     processOps = (err) =>
       if err
-        error err if @listeners('process-error').length == 0
+        Error err if table.getn(@listeners('process-error')) == 0
         @emit 'process-error', err
 
-      unless graphOps.length
+      unless table.getn graphOps
         processing = false
         return
       processing = true
-      op = graphOps.shift()
+      op = _.pop graphOps
       cb = processOps
       switch op.op
         when 'renameNode'
@@ -306,35 +310,35 @@ class Network extends EventEmitter
       do processOps unless processing
 
   subscribeSubgraph: (node) =>
-    unless node.component.isReady()
-      node.component.once 'ready', =>
+    unless node['component']\isReady()
+      node['component']\once 'ready', =>
         @subscribeSubgraph node
       return
 
-    return unless node.component.network
+    return unless node['component']['network']
 
-    node.component.network.setDebug @debug
+    node['component']['network']\setDebug @debug
 
-    emitSub = (type, data) =>
-      if type == 'process-error' and @listeners('process-error').length == 0
-        error data
-      do @increaseConnections if type == 'connect'
-      do @decreaseConnections if type == 'disconnect'
+    emitSub = (_type, data) =>
+      if _type == 'process-error' and table.getn(@listeners('process-error')) == 0
+        Error data
+      do @increaseConnections if _type == 'connect'
+      do @decreaseConnections if _type == 'disconnect'
       data = {} unless data
-      if data.subgraph
-        unless data.subgraph.unshift
-          data.subgraph = {data.subgraph}
-        data.subgraph = data.subgraph.unshift node.id
+      if data['subgraph']
+        --unless data['subgraph'].unshift
+          --data.subgraph = {data.subgraph}
+        data.subgraph = table.insert data['subgraph'], 1, node['id']
       else
         data.subgraph = {node.id}
       @emit type, data
 
-    node.component.network.on 'connect', (data) -> emitSub 'connect', data
-    node.component.network.on 'begingroup', (data) -> emitSub 'begingroup', data
-    node.component.network.on 'data', (data) -> emitSub 'data', data
-    node.component.network.on 'endgroup', (data) -> emitSub 'endgroup', data
-    node.component.network.on 'disconnect', (data) -> emitSub 'disconnect', data
-    node.component.network.on 'process-error', (data) ->
+    node['component']['network']\on 'connect', (data) -> emitSub 'connect', data
+    node['component']['network']\on 'begingroup', (data) -> emitSub 'begingroup', data
+    node['component']['network']\on 'data', (data) -> emitSub 'data', data
+    node['component']['network']\on 'endgroup', (data) -> emitSub 'endgroup', data
+    node['component']['network']\on 'disconnect', (data) -> emitSub 'disconnect', data
+    node['component']['network']\on 'process-error', (data) ->
       emitSub 'process-error', data
 
   --Subscribe to events from all connected sockets and re-emit them
@@ -370,38 +374,38 @@ class Network extends EventEmitter
         socket: socket
         metadata: socket.metadata
     socket.on 'error', (event) =>
-      error event if @listeners('process-error').length == 0
+      error event if table.getn(@listeners('process-error')) == 0
       @emit 'process-error', event
 
   subscribeNode: (node) =>
-    return unless node.component.getIcon
-    node.component.on 'icon', =>
+    return unless node['component'].getIcon
+    node['component']\on 'icon', =>
       @emit 'icon',
         id: node.id
-        icon: node.component.getIcon()
+        icon: node['component']\getIcon()
 
   addEdge: (edge, callback) =>
-    socket = internalSocket.createSocket edge.metadata
+    socket = internalSocket.createSocket edge['metadata']
     socket.setDebug @debug
     edge = json.decode edge
-    frm = @getNode edge.from.node   --from is a moonscript keyword so we use frm
+    frm = @getNode edge['from']['node']   --from is a moonscript keyword so we use frm
     unless frm
-      return callback   Error "No process defined for outbound node --{edge.from.node}"
+      return callback   Error "No process defined for outbound node #{edge['from']['node']}"
     unless frm.component
-      return callback   Error "No component defined for outbound node --{edge.from.node}"
-    unless frm.component.isReady()
-      frm.component.once "ready", =>
+      return callback   Error "No component defined for outbound node #{edge['from']['node']}"
+    unless frm['component'].isReady()
+      frm['component'].once "ready", =>
         @addEdge edge, callback
 
       return
 
-    to = @getNode edge.to.node
+    to = @getNode edge['to']['node']
     unless to
-      return callback   Error "No process defined for inbound node --{edge.to.node}"
-    unless to.component
-      return callback   Error "No component defined for inbound node --{edge.to.node}"
-    unless to.component.isReady()
-      to.component.once "ready", =>
+      return callback   Error "No process defined for inbound node #{edge['to']['node']}"
+    unless to['component']
+      return callback   Error "No component defined for inbound node #{edge['to']['node']}"
+    unless to['component'].isReady()
+      to['component'].once "ready", =>
         @addEdge edge, callback
 
       return
@@ -409,78 +413,78 @@ class Network extends EventEmitter
     --Subscribe to events from the socket
     @subscribeSocket socket
 
-    @connectPort socket, to, edge.to.port, edge.to.index, true
-    @connectPort socket, frm, edge.from.port, edge.from.index, false
+    @connectPort socket, to, edge['to']['port'], edge['to']['index'], true
+    @connectPort socket, frm, edge['from']['port'], edge['from']['index'], false
 
-    @connections.push socket
+    _.push @connections, socket
     callback() if callback
 
   removeEdge: (edge, callback) =>
     for connection in @connections
       continue unless connection
-      continue unless edge.to.node == connection.to.process.id and edge.to.port == connection.to.port
-      connection.to.process.component.inPorts[connection.to.port].detach connection
-      if edge.from.node
-        if connection.from and edge.from.node == connection.from.process.id and edge.from.port == connection.from.port
-          connection.from.process.component.outPorts[connection.from.port].detach connection
-      splice @connections, ._indexOf(@connections, connection), 1
+      continue unless edge['to']['node'] == connection['to']['process']['id'] and edge['to']['port'] == connection['to']['port']
+      connection['to']['process']['component']['inPorts'][connection['to']['port']].detach connection
+      if edge['from']['node']
+        if connection.from and edge['from']['node'] == connection['from']['process']['id'] and edge['from']['port'] == connection['from']['port']
+          connection['from']['process']['component']['outPorts'][connection['from']['port']].detach connection
+      splice @connections, _.indexOf(@connections, connection), 1
       do callback if callback
 
   addDefaults: (node, callback) =>
 
     process = @processes[node.id]
 
-    unless process.component.isReady()
-      process.component.setMaxListeners 0 if process.component.setMaxListeners
-      process.component.once "ready", =>
+    unless process['component']\isReady()
+      process['component']\setMaxListeners 0 if process['component']\setMaxListeners
+      process['component']\once "ready", =>
         @addDefaults process, callback
       return
 
-    for key, port in ipairs process.component.inPorts.ports
+    for key, port in pairs process['component']['inPorts']['ports']
       --Attach a socket to any defaulted inPorts as long as they aren't already attached.
       --TODO: hasDefault existence check is for backwards compatibility, clean
       --      up when legacy ports are removed.
-      if type(port.hasDefault) == 'function' and port.hasDefault() and not port.isAttached()
+      if type(port['hasDefault']) == 'function' and port.hasDefault() and not port.isAttached()
         socket = internalSocket.createSocket()
-        socket.setDebug @debug
+        socket\setDebug @debug
 
         --Subscribe to events from the socket
         @subscribeSocket socket
 
         @connectPort socket, process, key, undefined, true
 
-        @connections.push socket
+        _.push @connections, socket
 
-        @defaults.push socket
+        _.push @defaults, socket
 
     callback() if callback
 
   addInitial: (initializer, callback) =>
-    socket = internalSocket.createSocket initializer.metadata
-    socket.setDebug @debug
+    socket = internalSocket\createSocket initializer['metadata']
+    socket\setDebug @debug
 
     --Subscribe to events from the socket
     @subscribeSocket socket
 
-    to = @getNode initializer.to.node
+    to = @getNode initializer['to']['node']
     unless to
-      return callback  Error "No process defined for inbound node --{initializer.to.node}"
+      return callback  Error "No process defined for inbound node #{initializer.to.node}"
 
-    unless to.component.isReady() or to.component.inPorts[initializer.to.port]
-      to.component.setMaxListeners 0 if to.component.setMaxListeners
-      to.component.once "ready", =>
+    unless to['component'].isReady() or to['component']['inPorts'][initializer['to']['port']]
+      to['component'].setMaxListeners 0 if to['component'].setMaxListeners
+      to['component'].once "ready", =>
         @addInitial initializer, callback
       return
 
-    @connectPort socket, to, initializer.to.port, initializer.to.index, true
+    @connectPort socket, to, initializer['to']['port'], initializer['to']['index'], true
 
-    @connections.push socket
+    _.push @connections, socket
 
     init =
       socket: socket
-      data: initializer.from.data
-    @initials.push init
-    @nextInitials.push init
+      data: initializer['from']['data']
+    _.push @initials, init
+    _.push @nextInitials, init
 
     do @sendInitials if @isStarted()
 
@@ -489,25 +493,25 @@ class Network extends EventEmitter
   removeInitial: (initializer, callback) =>
     for connection in @connections
       continue unless connection
-      continue unless initializer.to.node == connection.to.process.id and initializer.to.port == connection.to.port
-      connection.to.process.component.inPorts[connection.to.port].detach connection
-      splice @connections, ._indexOf(@connections, connection), 1
+      continue unless initializer['to']['node'] == connection['to']['process']['id'] and initializer['to']['port'] == connection['to']['port']
+      connection['to']['process']['component']['inPorts'][connection['to']['port']].detach connection
+      splice @connections, _.indexOf(@connections, connection), 1
 
       for init in @initials
         continue unless init
-        continue unless init.socket == connection
-        @initials.splice ._indexOf(@initials, init), 1
+        continue unless init['socket'] == connection
+        splice @initials, _.indexOf(@initials, init), 1
       for init in @nextInitials
         continue unless init
         continue unless init.socket == connection
-        splice @nextInitials, ._indexOf(@nextInitials, init), 1
+        splice @nextInitials, _.indexOf(@nextInitials, init), 1
 
     do callback if callback
 
   sendInitial: (initial) =>
-    initial.socket.connect()
-    initial.socket.send initial.data
-    initial.socket.disconnect()
+    initial['socket']\connect()
+    initial['socket']\send initial.data
+    initial['socket']\disconnect()
 
   sendInitials: (callback) =>
     unless callback
@@ -518,7 +522,7 @@ class Network extends EventEmitter
       @initials = {}
       do callback
 
-    if type(process) != 'undefined' and process.execPath and _.indexOf(process.execPath, 'node') != -1
+    if type(process) != 'nil' and process['execPath'] and _.indexOf(process['execPath'], 'node') != -1
       --nextTick is faster on Node.js
       process\nextTick send
     else
@@ -536,25 +540,25 @@ class Network extends EventEmitter
       callback = ->
 
     --Perform any startup routines necessary for every component.
-    for id, process in ipairs @processes
-      process.component.start()
+    for id, process in pairs @processes
+      process['component']\start()
     do callback
 
-  sendDefaults: (callback) ->
+  sendDefaults: (callback) =>
     unless callback
       callback = ->
 
-    return callback() unless @defaults.length
+    return callback() unless table.getn @defaults
 
     for socket in @defaults
       --Don't send defaults if more than one socket is present on the port.
       --This case should only happen when a subgraph is created as a component
       --as its network is instantiated and its inputs are serialized before
       --a socket is attached from the "parent" graph.
-      continue unless socket.to.process.component.inPorts[socket.to.port].sockets.length == 1
-      socket.connect()
-      socket.send()
-      socket.disconnect()
+      continue unless table.getn(socket['to']['process']['component']['inPorts'][socket['to']['port']]['sockets']) == 1
+      socket\connect()
+      socket\send()
+      socket\disconnect()
 
     do callback
 
@@ -563,7 +567,7 @@ class Network extends EventEmitter
       callback = ->
 
     do @stop if @started
-    @initials = @nextInitials.slice 0
+    @initials = _.slice @nextInitials, 0
     @startComponents (err) =>
       return callback err if err
       @sendInitials (err) =>
@@ -579,8 +583,8 @@ class Network extends EventEmitter
       continue unless connection.isConnected()
       connection.disconnect()
     --Tell processes to shut down
-    for id, process in ipairs @processes
-      process.component.shutdown()
+    for id, process in pairs @processes
+      process['component']\shutdown()
     @setStarted false
 
   setStarted: (started) =>
@@ -590,12 +594,12 @@ class Network extends EventEmitter
       @started = false
       @emit 'end',
         start: @startupDate
-        end: moon.Date
+        end: os.time()
         uptime: @uptime()
       return
 
     --Starting the execution
-    @startupDate =   Date unless @startupDate
+    @startupDate =   os.time() unless @startupDate
     @started = true
     @emit 'start',
       start: @startupDate
@@ -609,8 +613,11 @@ class Network extends EventEmitter
 
     for socket in @connections
       socket.setDebug active
-    for processId, process in ipairs @processes
-      instance = process.component
-      instance.network.setDebug active if instance.isSubgraph()
+    for processId, process in pairs @processes
+      instance = process['component']
+      instance['network']\setDebug active if instance.isSubgraph()
 
 --exports.Network = Network
+exports['Network'] = Network
+
+return exports

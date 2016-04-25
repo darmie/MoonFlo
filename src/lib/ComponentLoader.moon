@@ -19,7 +19,7 @@ Allen.import()
 exports = {}
 
 class ComponentLoader extends EventEmitter
-  constructor: (@baseDir, @options = {}) ->
+  new: (@baseDir, @options = {}) =>
     @components = nil
     @componentLoaders = {}
     @checked = {}
@@ -28,7 +28,7 @@ class ComponentLoader extends EventEmitter
     @processing = false
     @ready = false
 
-  getModulePrefix: (name) ->
+  getModulePrefix: (name) =>
     return '' unless name
     return '' if name =='moonflo'
     if name(1) == '@'
@@ -38,7 +38,7 @@ class ComponentLoader extends EventEmitter
     --name = name.replace , '' if name[0] =='@'
     string.gsub(name,"","moonflo-")
 
-  getModuleComponents: (moduleName) ->
+  getModuleComponents: (moduleName) =>
     return unless _.indexOf(@checked, moduleName) ==-1
     _.push @checked, moduleName
     definition, err = require "/#{moduleName}/component.json"
@@ -78,7 +78,7 @@ class ComponentLoader extends EventEmitter
         cPath = definition['moonflo']['graphs'][name]
         @registerGraph prefix, name, "/#{moduleName}/#{cPath}"
 
-  listComponents: (callback) ->
+  listComponents: (callback) =>
     if @processing
       @once 'ready', =>
         callback nil, @components
@@ -98,7 +98,7 @@ class ComponentLoader extends EventEmitter
       callback nil, @components if callback
 
 
-  load: (name, callback, metadata) ->
+  load: (name, callback, metadata) =>
     unless @ready
       @listComponents (err) =>
         return callback err if err
@@ -137,7 +137,7 @@ class ComponentLoader extends EventEmitter
       callback nil, instance
 
   -- Creates an instance of a component.
-  createComponent: (name, component, metadata, callback) ->
+  createComponent: (name, component, metadata, callback) =>
     implementation = component
 
     -- If a string was specified, attempt to `require` it.
@@ -158,12 +158,12 @@ class ComponentLoader extends EventEmitter
     instance.componentName = name if type(name) =='string'
     callback nil, instance
 
-  isGraph: (cPath) ->
+  isGraph: (cPath) =>
     return true if type(cPath) =='table' and cPath.__class == moonfloGraph.Graph.__class
     return false unless type(cPath) =='string'
     _.indexOf(cPath, '.fbp') != -1 or _.indexOf(cPath, '.json') != -1
 
-  loadGraph: (name, component, callback, metadata) ->
+  loadGraph: (name, component, callback, metadata) =>
     graphImplementation = require @components['Graph']
     graphSocket = internalSocket\createSocket()
     graph = graphImplementation\getComponent metadata
@@ -177,7 +177,7 @@ class ComponentLoader extends EventEmitter
     @setIcon name, graph
     callback nil, graph
 
-  setIcon: (name, instance) ->
+  setIcon: (name, instance) =>
     -- See if component has an icon
     return if not instance['getIcon'] or instance\getIcon()
 
@@ -195,29 +195,29 @@ class ComponentLoader extends EventEmitter
     instance.setIcon 'square'
     return
 
-  getLibraryIcon: (prefix) ->
+  getLibraryIcon: (prefix) =>
     if @libraryIcons[prefix]
       return @libraryIcons[prefix]
     return nil
 
-  normalizeName: (packageId, name) ->
+  normalizeName: (packageId, name) =>
     prefix = @getModulePrefix packageId
     fullName = "#{prefix}/#{name}"
     fullName = name unless packageId
     fullName
 
-  registerComponent: (packageId, name, cPath, callback) ->
+  registerComponent: (packageId, name, cPath, callback) =>
     fullName = @normalizeName packageId, name
     @components[fullName] = cPath
     do callback if callback
 
-  registerGraph: (packageId, name, gPath, callback) ->
+  registerGraph: (packageId, name, gPath, callback) =>
     @registerComponent packageId, name, gPath, callback
 
-  registerLoader: (loader, callback) ->
+  registerLoader: (loader, callback) =>
     loader @, callback
 
-  setSource: (packageId, name, source, language, callback) ->
+  setSource: (packageId, name, source, language, callback) =>
     src = source
     unless @ready
       @listComponents (err) =>
@@ -259,10 +259,10 @@ class ComponentLoader extends EventEmitter
         return err
     unless implementation() or implementation().getComponent
       return callback Error 'Provided source failed to create a runnable component'
-    @registerComponent packageId, name, implementation, ->
+    @registerComponent packageId, name, implementation, =>
       callback nil
 
-  getSource: (name, callback) ->
+  getSource: (name, callback) =>
     unless @ready
       @listComponents (err) =>
         return callback err if err
@@ -289,7 +289,7 @@ class ComponentLoader extends EventEmitter
       nameParts[2] = ''
 
     if @isGraph component
-      moonfloGraph.loadFile component, (err, graph) ->
+      moonfloGraph.loadFile component, (err, graph) =>
         return callback err if err
         return callback Error 'Unable to load graph' unless graph
         callback nil,
@@ -308,7 +308,7 @@ class ComponentLoader extends EventEmitter
       code: window.require.modules[path].toString() --TODO: Lua equivalent
       language: utils.guessLanguageFromFilename component
 
-  clear: ->
+  clear: =>
     @components = nil
     @checked = {}
     @revalidate = true

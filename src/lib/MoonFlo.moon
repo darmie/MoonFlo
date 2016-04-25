@@ -9,22 +9,22 @@
 --Main APIs
 
 --Graph interface
-module "MoonFlo", package.seeall
-
+--module "MoonFlo", package.seeall
+local exports = {}
 -- Graph is used for instantiating FBP graph definitions.
 graph = require('Graph')
-export Graph = graph.Graph
+exports['Graph'] = graph.Graph
 
 -----Graph journal
 
 --Journal is used for keeping track of graph changes
 journal = require('Journal')
-export Journal = journal.Journal
+exports['Journal'] = journal.Journal
 
 --Network interface
 
 --Network is used for running NoFlo graphs.
-export Network = require('Network').Network
+exports['Network'] = require('Network').Network
 
 -- Platform detection
 
@@ -37,13 +37,14 @@ export Network = require('Network').Network
 --
 -- this will utilize the default Lua require function
 
-export ComponentLoader = require('ComponentLoader').ComponentLoader
+exports['ComponentLoader'] = require('ComponentLoader').ComponentLoader
 
 --------Component baseclasses
 --
 --These baseclasses can be used for defining NoFlo components.
-export Component = require('Component').Component
-export AsyncComponent = require('AsyncComponent').AsyncComponent
+
+exports['Component'] = require('Component').Component
+exports['AsyncComponent'] = require('AsyncComponent').AsyncComponent
 
 --------Component helpers
 --
@@ -53,26 +54,27 @@ helpers = require 'Helpers'
 --------NoFlo ports
 --
 --These classes are used for instantiating ports on MoonFlo components.
+
 ports = require 'Ports'
-export InPorts = ports.InPorts
-export OutPorts = ports.OutPorts
-export InPort = require 'InPort'
-export OutPort = require 'OutPort'
+exports['InPorts'] = ports.InPorts
+exports['OutPorts'] = ports.OutPorts
+exports['InPort'] = require 'InPort'
+exports['OutPort'] = require 'OutPort'
 
 
-export Port = require('Port').Port
-export ArrayPort = require('ArrayPort').ArrayPort
+exports['Port'] = require('Port').Port
+exports['ArrayPort'] = require('ArrayPort').ArrayPort
 
 --------MoonFlo sockets
 --
 --The MoonFlo internalSocket is used for connecting ports of
 --different components together in a network.
-export internalSocket = require('InternalSocket')
+exports['internalSocket'] = require('InternalSocket')
 
 --------Information Packets
 --
 --MoonFlo Information Packets are defined as "IP" objects.
-export IP = require 'IP'
+exports['IP'] = require 'IP'
 
 ------Network instantiation
 --
@@ -99,13 +101,13 @@ export IP = require 'IP'
 --moonflo.createNetwork someGraph, func, true
 
 
-export createNetwork = (graph, callback, options) ->
+exports['createNetwork'] = (graph, callback, options) ->
   unless type(options) == 'table'
     options =
       delay: options
   unless type(callback) == 'function'
     callback = (err) ->
-      throw err if err
+      Error err if err
 
   network = Network graph, options
 
@@ -144,7 +146,7 @@ export createNetwork = (graph, callback, options) ->
 --
 --      print 'Network is now running!'
 --
-export loadFile = (file, options, callback) ->
+exports['loadFile']= (file, options, callback) ->
   unless callback
     callback = options
     baseDir = null
@@ -161,5 +163,7 @@ export loadFile = (file, options, callback) ->
 --------Saving a network definition
 --
 --MoonFlo graph files can be saved back into the filesystem with this method.
-export saveFile = (graph, file, callback) ->
+exports['saveFile'] = (graph, file, callback) ->
   graph.save file, -> callback file
+
+return exports  

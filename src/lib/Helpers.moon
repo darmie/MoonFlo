@@ -2,13 +2,8 @@
 --     (c) 2014-2015 TheGrid (Rituwall Inc.)
 --      @Author Damilare Akinlaja, 2016
 --     MoonFlo may be freely distributed under the MIT license
-module "Helpers", package.seeall
-export MapComponent
-export WirePattern
-export GroupedInput
-export MultiError
-export CustomError
-export CustomizeError
+
+exports = {}
 
 _ = require 'moses'
 StreamSender = require('Streams').StreamSender
@@ -146,10 +141,10 @@ WirePattern = (component, config, proc) ->
 
   for name in inPorts
     unless component['inPorts'][name]
-      error "no inPort named '--{name}'"
+      Error "no inPort named '#{name}'"
   for name in outPorts
     unless component['outPorts'][name]
-      error "no outPort named '--{name}'"
+      Error "no outPort named '#{name}'"
 
   component['groupedData'] = {}
   component['groupedGroups'] = {}
@@ -239,7 +234,7 @@ WirePattern = (component, config, proc) ->
         task()
   for port in config['params']
     unless component['inPorts'][port]
-      error "no inPort named '--{port}'"
+      Error "no inPort named '--{port}'"
     _.push(component['requiredParams'], port) if component['inPorts'][port]\isRequired()
     _.push(component['defaultedParams'], port) if component['inPorts'][port]\hasDefault()
   for port in config['params']
@@ -562,7 +557,7 @@ GroupedInput = WirePattern
 
 -- `CustomError` returns an `Error` object carrying additional properties.
 CustomError = (message, options) ->
-  err = error message
+  err = Error message
   return CustomizeError err, options
 
 -- `CustomizeError` sets additional options for an `Error` object.
@@ -597,10 +592,10 @@ MultiError = (component, group = '', errorPort = 'error', forwardedGroups = {}) 
     return unless  _.contains component['outPorts'], errorPort
     return unless component['outPorts'][errorPort]\isAttached()
     component['outPorts'][errorPort]\beginGroup group if group
-    for error in component['errors']
-      component['outPorts'][errorPort]\beginGroup grp for grp in error['groups']
+    for _error in component['errors']
+      component['outPorts'][errorPort]\beginGroup grp for grp in _error['groups']
       component['outPorts'][errorPort]\send error['err']
-      component['outPorts'][errorPort]\endGroup() for grp in error['groups']
+      component['outPorts'][errorPort]\endGroup() for grp in _error['groups']
     component['outPorts'][errorPort]\endGroup() if group
     component['outPorts'][errorPort]\disconnect()
     -- Clean the status for next activation

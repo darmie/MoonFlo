@@ -9,9 +9,9 @@
 
 --Wraps an object to be used in Substreams
 --moon = require "moon"
-module "Streams", package.seeall
-export IP, Substream, StreamSender, StreamReceiver
-
+--module "Streams", package.seeall
+exports = {}
+_ = require "moses"
 class IP
   new: (@data) =>
   sendTo: (port) =>
@@ -38,7 +38,7 @@ class Substream
   getKey: =>
     return @key
   getValue: =>
-    switch @value.length
+    switch table.getn @value
       when 0
         return nil
       when 1
@@ -54,7 +54,7 @@ class Substream
       else
         res = {}
         hasKeys = false
-        for ip in *@value
+        for ip in @value
           val = if type(ip.getValue) == 'function' then ip.getValue() else ip
           if ip.__class.__name == Substream.__name
             obj = {}
@@ -92,7 +92,7 @@ class StreamSender
           table.insert @q, value
           @resetCurrent()
         else
-          parent = @stack[table.getn (@stack) - 1]
+          parent = @stack[table.getn(@stack) - 1]
           table.insert parent, value
           @current = parent
         return @
@@ -159,7 +159,7 @@ class StreamReceiver
             @current = @parent
         when 'data'
           if @level == 0
-            @q.push IP payload
+            _.push @q, IP payload
           else
             table.insert @current  IP payload
         when 'disconnect'
@@ -172,3 +172,8 @@ class StreamReceiver
   read: =>
     return nil if table.getn(@q) == 0
     return table.remove @q, 1
+
+
+_.push exports, :IP, :Substream, :StreamSender, :StreamReceiver
+
+return exports

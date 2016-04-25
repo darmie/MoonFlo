@@ -2,10 +2,8 @@
 --@Author Damilare Akinlaja, 2016
 --MoonFlo may be freely distributed under the MIT license
 
-module "InternalSocket", package.seeall
-export InternalSocket = InternalSocket
-
-export createSocket = ->  InternalSocket!
+--module "InternalSocket", package.seeall
+exports = {}
 --print(package.path)
 --  on production set path to search from project root package.path = package.path .. ";?.lua;"
 -- moon = require 'moonscript'
@@ -14,6 +12,7 @@ EventEmitter = require 'events'
 Allen = require "Allen"
 Allen.import()
 
+Error = require "Error"
 ---- Internal Sockets
 ----
 ----The default communications mechanism between MoonFlo processes is
@@ -28,10 +27,10 @@ class InternalSocket extends EventEmitter
   debugEmitEvent: (event, data) =>
     success, err = @emit event, data
     if err
-      error err if table.getn(@listeners('error')) == 0
+      Error(err) if table.getn(@listeners('error')) == 0
       @emit 'error',
-        id: @to.process.id
-        error: error
+        id: @to['process']['id']
+        error: Error
         metadata: @metadata
 
   new: (@metadata = {}) =>
@@ -141,7 +140,7 @@ class InternalSocket extends EventEmitter
   ----helps in the case of defaulting values.
   setDataDelegate: (delegate) =>
     unless typee(delegate) == 'function'
-      error'A data delegate must be a function.'
+      Error 'A data delegate must be a function.'
     @dataDelegate = delegate
 
   ---- Socket debug mode
@@ -243,3 +242,9 @@ class InternalSocket extends EventEmitter
     ----Emit the legacy event
     legacyEvent = @ipToLegacy ip
     @emitEvent legacyEvent.event, legacyEvent.payload
+
+exports['InternalSocket'] = InternalSocket
+
+exports['createSocket'] = ->  InternalSocket!
+
+return exports

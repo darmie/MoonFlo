@@ -7,8 +7,8 @@
 
 moon = require "moon"
 
-module "Utils", package.seeall
-export clone, guessLanguageFromFilename
+--module "Utils", package.seeall
+exports = {}
 
 clone = (obj)->
   unless type(obj) != 'table'
@@ -28,6 +28,9 @@ clone = (obj)->
 
 --Guess language from filename
 guessLanguageFromFilename = (filename) ->
+    regex = re.compile([[]])
     if filename\match("^.+(%..+)$") == '.moon'
       return 'Moonscript'
     return 'Lua'
+_.push exports, :clone, :guessLanguageFromFilename    
+return exports

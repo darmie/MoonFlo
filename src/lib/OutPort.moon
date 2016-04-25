@@ -7,8 +7,7 @@ BasePort = require 'BasePort'
 IP = require 'IP'
 _ = require "moses"
 
-module "OutPort", package.seeall
-export OutPort
+
 
 class OutPort extends BasePort
   new: (options) =>
@@ -23,7 +22,7 @@ class OutPort extends BasePort
   connect: (socketId = nil) =>
     sockets = @getSockets socketId
     @checkRequired sockets
-    for socket in *sockets
+    for socket in sockets
       continue unless socket
       socket.connect()
 
@@ -37,7 +36,7 @@ class OutPort extends BasePort
   send: (data, socketId = nil) =>
     sockets = @getSockets socketId
     @checkRequired sockets
-    if @isCaching() and data isnt @cache[socketId]
+    if @isCaching() and data != @cache[socketId]
       @cache[socketId] = data
     _.each sockets, (socket) ->
       return unless socket
@@ -46,7 +45,7 @@ class OutPort extends BasePort
   endGroup: (socketId = nil) =>
     sockets = @getSockets socketId
     @checkRequired sockets
-    for socket in *sockets
+    for socket in sockets
       continue unless socket
       socket.endGroup()
 
@@ -57,24 +56,24 @@ class OutPort extends BasePort
       continue unless socket
       socket.disconnect()
 
-  sendIP: (type, data, options, socketId) =>
-    if IP.isIP type
-      ip = type
-      socketId = ip.index
+  sendIP: (_type, data, options, socketId) =>
+    if IP.isIP _type
+      ip = _type
+      socketId = ip['index']
     else
-      ip = IP type, data, options
+      ip = IP _type, data, options
     sockets = @getSockets socketId
     @checkRequired sockets
     if @isCaching() and data != @cache[socketId] or data != 0
       @cache[socketId] = ip
     pristine = true
-    for socket in *sockets
+    for socket in sockets
       continue unless socket
       if pristine
-        socket.post ip
+        socket\post ip
         pristine = false
       else
-        socket.post if ip.clonable then ip.clone() else ip
+        socket\post if ip.clonable then ip.clone() else ip
     @
 
   openBracket: (data = nil, options = {}, socketId = nil) =>
@@ -88,12 +87,12 @@ class OutPort extends BasePort
 
   checkRequired: (sockets) =>
     if table.getn(sockets) == 0 and @isRequired()
-      error "#{@getId()}: No connections available"
+      Error "#{@getId()}: No connections available"
 
   getSockets: (socketId) ->
     -- Addressable sockets affect only one connection at time
     if @isAddressable()
-      error "#{@getId()} Socket ID required" if socketId is nil
+      Error "#{@getId()} Socket ID required" if socketId == nil
       return {} unless @sockets[socketId]
       return {@sockets[socketId]}
     -- Regular sockets affect all outbound connections
@@ -102,3 +101,5 @@ class OutPort extends BasePort
   isCaching: =>
     return true if @options.caching
     false
+
+return OutPort

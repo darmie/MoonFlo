@@ -6,11 +6,13 @@
 
 EventEmitter = require 'events'
 _ = require "moses"
-require 'splice'
-require 'indexOf'
+splice = require 'splice'
+Error = require 'Error'
+Allen = require 'Allen'
+Allen.import()
+--require 'indexOf'
 
-module "Port", package.seeall
-export Port
+
 
 class Port extends EventEmitter
   description: ''
@@ -26,7 +28,7 @@ class Port extends EventEmitter
   getId: =>
     unless @node and @name
       return 'Port'
-    "#{@node}   " .. string.upper tostring@name
+    "#{@node}  #{string.capitalize @name}"
 
   getDataType: => @type
   getDescription: => @description
@@ -53,43 +55,43 @@ class Port extends EventEmitter
 
   connect: =>
     if table.getn(@sockets) == 0
-      error " #{@getId()}: No connections available"
+      Error " #{@getId()}: No connections available"
     socket.connect() for socket in @sockets
 
   beginGroup: (group) =>
-    if @sockets.length is 0
-      error " #{@getId()}: No connections available"
+    if table.getn @sockets == 0
+      Error " #{@getId()}: No connections available"
 
     _.each @sockets, (socket) =>
       return socket.beginGroup group if socket.isConnected()
-      socket.once 'connect', ->
+      socket.once 'connect', =>
         socket.beginGroup group
       do socket.connect!
 
   send: (data) =>
     if table.getn(@sockets) == 0
-      error "#{@getId()}: No connections available"
+      Error "#{@getId()}: No connections available"
 
     _.each @sockets, (socket) =>
       return socket.send data if socket.isConnected()
-      socket.once 'connect', ->
+      socket.once 'connect', =>
         socket.send data
       do socket.connect!
 
   endGroup: =>
     if table.getn(@sockets) == 0
-      error "#{@getId()}: No connections available"
+      Error "#{@getId()}: No connections available"
     socket.endGroup() for socket in @sockets
 
   disconnect: =>
     if table.getn(@sockets) == 0
-      error "#{@getId()}: No connections available"
+      Error "#{@getId()}: No connections available"
     socket.disconnect() for socket in @sockets
 
   detach: (socket) =>
     return if table.getn(@sockets) == 0
     socket = @sockets[0] unless socket
-    index = indexOf @sockets, socket
+    index = _.indexOf @sockets, socket
     return if index == -1
     if @isAddressable()
       @sockets[index] = undefined
@@ -98,7 +100,7 @@ class Port extends EventEmitter
     splice(@sockets, index, 1)
     @emit "detach", socket
 
-  isConnected: ->
+  isConnected: =>
     connected = false
     _.each @sockets, (socket) =>
       if socket.isConnected()
@@ -106,18 +108,18 @@ class Port extends EventEmitter
     return connected
 
 
-  isAddressable: -> false
-  isRequired: -> @required
+  isAddressable: => false
+  isRequired: => @required
 
-  isAttached: ->
-    return true if table.getln(@sockets) > 0
+  isAttached: =>
+    return true if table.getn(@sockets) > 0
     false
 
-  listAttached: ->
+  listAttached: =>
     attached = {}
     for idx,socket in pairs @sockets
       continue unless socket
       _.push(attached, idx)
     attached
 
-  canAttach: -> true
+  canAttach: => true

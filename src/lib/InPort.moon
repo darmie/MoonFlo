@@ -4,13 +4,15 @@
 
 
 --Input Port (inport) implementation for MoonFlo components
-module "InPort", package.seeall
-export InPort
+--module "InPort", package.seeall
+exports = {}
 
 BasePort = require 'BasePort'
 IP = require 'IP'
 _ = require 'moses'
 filter = require 'filter'
+
+Error = require "Error"
 
 class InPort extends BasePort
   new: (options, process) =>
@@ -33,12 +35,12 @@ class InPort extends BasePort
 
     if process
       unless type(process) == 'function'
-        error 'process must be a function'
+        Error 'process must be a function'
       @process = process
 
     if options['handle']
       unless type(options['handle']) == 'function'
-        error 'handle must be a function'
+        Error 'handle must be a function'
       @handle = options['handle']
       --delete options['handle']
       table.remove options, options['handle']
@@ -127,18 +129,18 @@ class InPort extends BasePort
   validateData: (data) =>
     return unless @options['values']
     if _.indexOf(@options['values'], data) == -1
-      error "Invalid data='#{data}' received, not in [#{@options['values']}]"
+      Error "Invalid data='#{data}' received, not in [#{@options['values']}]"
 
   --Returns the next packet in the (legacy) buffer
   receive: =>
     unless @isBuffered()
-      error 'Receive is only possible on buffered ports'
+      Error 'Receive is only possible on buffered ports'
     _.pop(@buffer)
 
   --Returns the number of data packets in a (legacy) buffered inport
   contains: =>
     unless @isBuffered()
-      error 'Contains query is only possible on buffered ports'
+      Error 'Contains query is only possible on buffered ports'
     table.getn filter(@buffer, (packet) -> return true if packet['event'] == 'data')
 
   --Fetches a packet from the port
@@ -160,3 +162,6 @@ class InPort extends BasePort
   --Tells if buffer has packets or not
   ready: (scope) =>
     return @length(scope) > 0
+
+exports['InPort'] = inports
+return exports

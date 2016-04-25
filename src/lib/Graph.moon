@@ -12,6 +12,8 @@ json = require "cjson"
 Allen = require "Allen"
 Allen.import()
 
+expots = {}
+
 -- This class represents an abstract NoFlo graph containing nodes
 -- connected to each other with edges.
 --
@@ -791,12 +793,12 @@ class Graph extends EventEmitter
       --throw err if err
       --callback file
 
-export Graph = Graph
+expots['Graph'] = Graph
 
-export createGraph = (name) ->
+expots['createGraph'] = (name) ->
   Graph name
 
-export loadJSON = (definition, callback, metadata = {}) ->
+expots['loadJSON'] = (definition, callback, metadata = {}) ->
   definition = json.decode definition if type(definition) == 'string'
   definition['properties'] = {} unless definition['properties']
   definition['processes'] = {} unless definition['processes']
@@ -869,7 +871,7 @@ export loadJSON = (definition, callback, metadata = {}) ->
 
   callback nil, graph
 
-export loadFBP = (fbpData, callback) ->
+expots['loadFBP'] = (fbpData, callback) ->
   --try
   definition, err = require('fbp').parse fbpData
     if err then return callback err
@@ -877,7 +879,7 @@ export loadFBP = (fbpData, callback) ->
     --return callback e
   loadJSON definition, callback
 
-export loadHTTP = (url, callback) ->
+expots['loadHTTP'] = (url, callback) ->
   req = XMLHttpRequest
   req.onreadystatechange = ->
     return unless req.readyState is 4
@@ -887,7 +889,7 @@ export loadHTTP = (url, callback) ->
   req.open 'GET', url, true
   req.send()
 
-export loadFile = (file, callback, metadata = {}) ->
+expots['loadFile'] = (file, callback, metadata = {}) ->
   --if platform.isBrowser()
     --try
       -- Graph exposed via Component packaging
@@ -969,11 +971,14 @@ mergeResolveTheirsNaive = (base, to) =>
   for group in to['groups']
     base\addGroup group['name'], group['nodes'], group['metadata']
 
-export equivalent = (a, b, options = {}) =>
+expots['equivalent'] = (a, b, options = {}) =>
   -- TODO: add option to only compare known fields
   -- TODO: add option to ignore metadata
   A = json.encode a --JSON.stringify a -- find a way to stringify a table
   B = json.encode b --JSON.stringify b -- find a way to stringify a tab;e
   return A == B
 
-export mergeResolveTheirs = mergeResolveTheirsNaive
+expots['mergeResolveTheirs'] = mergeResolveTheirsNaive
+
+
+return expots

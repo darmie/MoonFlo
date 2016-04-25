@@ -46,7 +46,7 @@ class BasePort extends EventEmitter
   getId: =>
     unless @node and @name
       return 'Port'
-    "#{@node} #{string.capitalize(@name)}" 
+    "#{@node} #{string.capitalize(@name)}"
 
   getDataType: => @options['datatype']
   getDescription: => @options['description']
@@ -114,5 +114,5 @@ class BasePort extends EventEmitter
 
   canAttach: => true
 
-export BasePort = BasePort
+--export BasePort = BasePort
 return BasePort

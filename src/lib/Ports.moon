@@ -6,12 +6,13 @@
 --Generic object clone. Based on NoFlo's Implementation
 
 moon = require "moon"
-
-module "Ports", package.seeall
-export InPorts, OutPorts
+re = require "luaregex"
+_ = require "moses"
+--module "Ports", package.seeall
+exports = {}
 
 EventEmitter = require 'events'
-
+_ = require 'moses'
 InPort = require 'InPort'
 OutPort = require 'OutPort'
 
@@ -25,10 +26,11 @@ class Ports extends EventEmitter
 
   add: (name, options, process) =>
     if name == 'add' or name == 'remove'
-      print "Error => Add and remove are restricted port names"
+      Error "add and remove are restricted port names"
 
-    unless name\match '^[a-z0-9_\.\/]+$'
-      print "Error =>Port names can only contain lowercase alphanumeric characters and underscores. '#{name}' not allowed"
+    regex = re.compile([[^[a-z0-9_]+$]])
+    unless regex\match(name)  --TODO: use LuaRegex
+      Error "Port names can only contain lowercase alphanumeric characters and underscores. '#{name}' not allowed"
 
     --Remove previous implementation
     @remove name if @ports[name]
@@ -52,7 +54,7 @@ class Ports extends EventEmitter
 
     @ -- chainable
 
-InPorts = class InPorts extends Ports
+class InPorts extends Ports
   on: (name, event, callback) =>
     print "Error Port #{name} not available" unless @ports[name]
     @ports[name]\on event, callback
@@ -60,7 +62,7 @@ InPorts = class InPorts extends Ports
     print "Error Port #{name} not available" unless @ports[name]
     @ports[name]\once event, callback
 
-OutPorts = class OutPorts extends Ports
+class OutPorts extends Ports
   model: OutPort
 
   connect: (name, socketId) =>
@@ -78,3 +80,8 @@ OutPorts = class OutPorts extends Ports
   disconnect: (name, socketId) ->
     print "Error =>Port #{name} not available" unless @ports[name]
     @ports[name]\disconnect socketId
+
+
+_.push exports, :InPorts, :OutPorts
+
+return exports

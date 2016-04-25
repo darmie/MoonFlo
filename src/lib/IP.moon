@@ -3,8 +3,8 @@
 --MoonFlo may be freely distributed under the MIT license
 _ = require 'moses'
 
-module("IP", package.seeall)
-export IP
+--module("IP", package.seeall)
+exports = {}
 
 class IP
   --Valid IP types
@@ -27,7 +27,7 @@ class IP
     @clonable = false --cloning safety flag
     @index = nil --addressable port index
     for key, val in pairs options
-      this[key] = val
+      @[key] = val
 
   --Creates a new IP copying its contents by value not reference
   clone: =>
@@ -42,11 +42,15 @@ class IP
     ip
 
   --Moves an IP to a different owner
-  move: (@owner) ->
+  move: (@owner) =>
     --no-op
 
   --Frees IP contents
   drop: =>
     print @
     for key, val in pairs @
-       this[key] = nil
+       @[key] = nil
+
+_.push exports, :IP
+
+return exports

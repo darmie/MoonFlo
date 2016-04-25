@@ -1,4 +1,4 @@
-module("filter", package.seeall)
+
 
 filter = function(t, filterIter)
   local out = {}
@@ -9,3 +9,5 @@ filter = function(t, filterIter)
 
   return out
 end
+
+return filter

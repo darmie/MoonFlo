@@ -206,3 +206,6 @@ class ProcessOutput
             @nodeInstance['outPorts'][port]\sendIP ip
         _.pop(@nodeInstance['outputQ'])
     @nodeInstance['load'] -= 1
+
+
+return Component    
