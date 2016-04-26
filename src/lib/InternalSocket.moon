@@ -9,8 +9,8 @@ exports = {}
 -- moon = require 'moonscript'
 IP = require 'IP'    --- remember to overide require using moon.loadfile 'IP'
 EventEmitter = require 'events'
-Allen = require "Allen"
-Allen.import()
+--Allen = require "Allen"
+--Allen.import()
 
 Error = require "Error"
 ---- Internal Sockets
@@ -160,7 +160,7 @@ class InternalSocket extends EventEmitter
   ----components may also loom like _DATA -> ReadFile:SOURCE_.
   getId: =>
     fromStr = (_from) ->
-      "#{_from['process']['id']}() #{string.capitalize(_from['port'])}"
+      "#{_from['process']['id']}() #{string.upper(_from['port'])}"
     toStr = (to) ->
       "#{to['port']} #{to['process']['id']}()"
 

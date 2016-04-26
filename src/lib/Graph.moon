@@ -8,9 +8,10 @@ clone = require('Utils').clone
 platform = require 'Platform'
 splice = require 'splice'
 _ = require "moses"
-json = require "cjson"
-Allen = require "Allen"
-Allen.import()
+json = package.loadlib("cjson.dll", "")  --require "cjson"
+--json!
+--Allen = require "Allen"
+--Allen.import()
 
 expots = {}
 
@@ -688,9 +689,13 @@ class Graph extends EventEmitter
 
   toDOT: ->
     cleanID = (id) =>
-      id.replace /\s*/g, ""  --TODO: find Lua equivalent of regex replace
+      regex = re.compile([[\s*g]])
+      id = regex\sub("", id)
+      --id.replace /\s*/g, ""
     cleanPort = (port) =>
-      port.replace /\./g, "" --TODO: find Lua equivalent of regex replace
+      regex = re.compile([[\.g]])
+      port = regex\sub("", port)
+      --port.replace /\./g, ""
 
     dot = "digraph {\n"
 
@@ -793,12 +798,12 @@ class Graph extends EventEmitter
       --throw err if err
       --callback file
 
-expots['Graph'] = Graph
+Graph = Graph
 
-expots['createGraph'] = (name) ->
+createGraph = (name) ->
   Graph name
 
-expots['loadJSON'] = (definition, callback, metadata = {}) ->
+loadJSON = (definition, callback, metadata = {}) ->
   definition = json.decode definition if type(definition) == 'string'
   definition['properties'] = {} unless definition['properties']
   definition['processes'] = {} unless definition['processes']
@@ -823,12 +828,12 @@ expots['loadJSON'] = (definition, callback, metadata = {}) ->
     metadata = if conn['metadata'] then conn['metadata'] else {}
     if conn['data'] != undefined
       if type(conn['tgt']['index']) == 'number'
-        graph\addInitialIndex conn['data'], conn['tgt']['process'], string.lower (conn['tgt']['port']), conn['tgt']['index'], metadata
+        graph\addInitialIndex conn['data'], conn['tgt']['process'], string.lower(conn['tgt']['port']), conn['tgt']['index'], metadata
       else
-        graph.addInitial conn['data'], conn['tgt']['process'], string.lower (conn['tgt']['port']), metadata
+        graph.addInitial conn['data'], conn['tgt']['process'], string.lower(conn['tgt']['port']), metadata
       continue
-    if type(conn['src']['index']) == 'number' or type(conn['tgt']['index'] == 'number'
-      graph\addEdgeIndex conn['src']['process'], string.lower (conn['src']['port']), conn['src']['index'], conn['tgt']['process'], string.lower(conn['tgt']['port']), conn['tgt']['index'], metadata
+    if type(conn['src']['index']) == 'number' or type(conn['tgt']['index']) == 'number'
+      graph\addEdgeIndex conn['src']['process'], string.lower(conn['src']['port']), conn['src']['index'], conn['tgt']['process'], string.lower(conn['tgt']['port']), conn['tgt']['index'], metadata
       continue
     graph\addEdge conn['src']['process'], string.lower(conn['src']['port']), conn['tgt']['process'], string.lower(conn['tgt']['port']), metadata
 
@@ -871,44 +876,47 @@ expots['loadJSON'] = (definition, callback, metadata = {}) ->
 
   callback nil, graph
 
-expots['loadFBP'] = (fbpData, callback) ->
+loadFBP = (fbpData, callback) ->
   --try
   definition, err = require('fbp').parse fbpData
-    if err then return callback err
+  if err
+    return callback err
   --catch e
     --return callback e
   loadJSON definition, callback
 
-expots['loadHTTP'] = (url, callback) ->
-  req = XMLHttpRequest
-  req.onreadystatechange = ->
-    return unless req.readyState is 4
-    unless req.status is 200
-      return callback new Error "Failed to load #{url}: HTTP #{req.status}"
-    callback nil, req.responseText
-  req.open 'GET', url, true
-  req.send()
+--loadHTTP = (url, callback) ->
+  --http = require("socket.http")
 
-expots['loadFile'] = (file, callback, metadata = {}) ->
+  --req = XMLHttpRequest
+  --req.onreadystatechange = ->
+    --return unless req.readyState is 4
+    --unless req.status is 200
+      --return callback new Error "Failed to load #{url}: HTTP #{req.status}"
+    --callback nil, req.responseText
+  --req.open 'GET', url, true
+  --req.send()
+
+loadFile = (file, callback, metadata = {}) ->
   --if platform.isBrowser()
     --try
       -- Graph exposed via Component packaging
-  definition, err = require file
+  definition = require file
     --catch e
       -- Graph available via HTTP
-  if err
-      loadHTTP file, (err, data) ->
-        return callback err if err
-        if _.pop(split(file,'.')) == 'fbp'
-          return loadFBP data, callback, metadata
-        definition =  data
-        loadJSON definition, callback, metadata
-      return
+  --if err
+      --loadHTTP file, (err, data) ->
+        --return callback err if err
+        --if _.pop(split(file,'.')) == 'fbp'
+        --  return loadFBP data, callback, metadata
+        --definition =  data
+        --loadJSON definition, callback, metadata
+      --return
   loadJSON definition, callback, metadata
-  return
+  --return
   -- Node.js graph file
   file = io.open file, "r"
-  data, err = file\read(*a)
+  data, err = file\read('*a')
   file\close!
   --callback data
   if err
@@ -971,14 +979,14 @@ mergeResolveTheirsNaive = (base, to) =>
   for group in to['groups']
     base\addGroup group['name'], group['nodes'], group['metadata']
 
-expots['equivalent'] = (a, b, options = {}) =>
+equivalent= (a, b, options = {}) =>
   -- TODO: add option to only compare known fields
   -- TODO: add option to ignore metadata
   A = json.encode a --JSON.stringify a -- find a way to stringify a table
   B = json.encode b --JSON.stringify b -- find a way to stringify a tab;e
   return A == B
 
-expots['mergeResolveTheirs'] = mergeResolveTheirsNaive
+mergeResolveTheirs = mergeResolveTheirsNaive
 
-
+_.push expots, :loadFile, :mergeResolveTheirs, :equivalent, :Graph, :loadJSON, :createGraph, :loadFBP
 return expots

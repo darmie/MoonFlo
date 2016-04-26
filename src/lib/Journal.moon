@@ -5,7 +5,7 @@
 exports = {}
 EventEmitter = require 'events'
 _ = require 'moses'
-json = require "cjson"
+json = package.loadlib("cjson.dll", "")  --require "cjson"
 clone = require('Utils').clone
 
 Error = require "Error"
@@ -177,7 +177,7 @@ class Journal extends EventEmitter
   startTransaction: (id, meta) =>
     return if not @subscribed
     if table.getn @entries > 0
-      error("Inconsistent @entries")
+      Error("Inconsistent @entries")
     @currentRevision +=1
     @appendCommand 'startTransaction', {id: id, metadata: meta}, @currentRevision
 
@@ -227,7 +227,7 @@ class Journal extends EventEmitter
         when 'removeOutport' then @graph\removeOutport
         when 'renameOutport' then @graph\renameOutport a['oldId'], a['newId']
         when 'changeOutport' then @graph\setOutportMetadata a['name'], calculateMeta(a['old'], a['new'])
-        else error("Unknown journal entry: #{entry['cmd']}")
+        else Error ("Unknown journal entry: #{entry['cmd']}")
 
   executeEntryInversed: (entry) =>
     a = entry['args']
@@ -256,7 +256,7 @@ class Journal extends EventEmitter
       when 'removeOutport' then @graph\addOutport a['name'], a['port']['process'], a['port']['port'], a['port']['metadata']
       when 'renameOutport' then @graph\renameOutport a['newId'], a['oldId']
       when 'changeOutport' then @graph\setOutportMetadata a['name'], calculateMeta(a['new'], a['old'])
-      else error("Unknown journal entry: #{entry['cmd']}")
+      else Error("Unknown journal entry: #{entry['cmd']}")
 
   moveToRevision: (revId) =>
     return if revId == @currentRevision

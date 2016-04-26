@@ -111,11 +111,9 @@ class ProcessInput
     res
 
   get: =>
-    if @nodeInstance['ordered'] and
-    @nodeInstance['activateOnInput'] and
-    not (_.contains(@result , '__resolved'))
+    if @nodeInstance['ordered'] and @nodeInstance['activateOnInput'] and not (_.contains(@result , '__resolved'))
       @activate!
-    res = (@ports[port]\get @scope for port in arguments)
+    res = @ports[port].get @scope for port in arguments
     if table.getn(arguments) == 1 then res[1] else res
 
   getData: =>
@@ -147,9 +145,8 @@ class ProcessOutput
       _.push @nodeInstance['outputQ'], @result
 
   isError: (err) ->
-    if err.__class == Error or
-    _.isArray(err) and table.getn(err) > 1 and err[1].__class == Error
-        return true
+    if err.__class == Error or _.isArray(err) and table.getn(err) > 1 and err[1].__class == Error
+      return true
     return false
     --err instanceof Error or
     --Array.isArray(err) and err.length > 0 and err[0] instanceof Error
@@ -158,8 +155,7 @@ class ProcessOutput
   error: (err) =>
     multiple = _.isArray err
     err = {err} unless multiple
-    if _.contains @ports, 'error' and
-    (@ports['error']\isAttached() or not @ports['error']\isRequired())
+    if _.contains @ports, 'error' and (@ports['error']\isAttached() or not @ports['error']\isRequired())
       @sendIP 'error',   IP 'openBracket' if multiple
       @sendIP 'error', e for e in err
       @sendIP 'error',   IP 'closeBracket' if multiple
@@ -167,8 +163,7 @@ class ProcessOutput
       Error e for e in err
 
   sendIP: (port, packet) =>
-    if type(packet) != 'table' or
-    _.indexOf(IP['types'], packet['type']) == -1
+    if type(packet) != 'table' or _.indexOf(IP['types'], packet['type']) == -1
       ip =   IP 'data', packet
     else
       ip = packet
@@ -180,8 +175,7 @@ class ProcessOutput
       @nodeInstance['outPorts'][port].sendIP ip
 
   send: (outputMap) =>
-    if @nodeInstance['ordered'] and
-    not (_.contains @result, '__resolved')
+    if @nodeInstance['ordered'] and not (_.contains @result, '__resolved')
       @activate()
     return @error outputMap if @isError outputMap
     for port in outputMap
@@ -208,4 +202,4 @@ class ProcessOutput
     @nodeInstance['load'] -= 1
 
 
-return Component    
+return Component

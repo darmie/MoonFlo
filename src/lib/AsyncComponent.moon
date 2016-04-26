@@ -9,7 +9,7 @@ component = require "Component"
 cron = require 'cron'
 _ = require 'moses'
 
-class AsyncComponent extends component.Component
+class AsyncComponent extends component
 
   new: (@inPortName="in", @outPortName="out", @errPortName="error") =>
     unless @inPorts[@inPortName]

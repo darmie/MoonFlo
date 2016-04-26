@@ -6,7 +6,7 @@
 --Generic object clone. Based on NoFlo's Implementation
 
 moon = require "moon"
-
+_ = require "moses"
 --module "Utils", package.seeall
 exports = {}
 
@@ -32,5 +32,5 @@ guessLanguageFromFilename = (filename) ->
     if filename\match("^.+(%..+)$") == '.moon'
       return 'Moonscript'
     return 'Lua'
-_.push exports, :clone, :guessLanguageFromFilename    
+_.push exports, :clone, :guessLanguageFromFilename
 return exports

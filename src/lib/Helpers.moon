@@ -224,8 +224,7 @@ WirePattern = (component, config, proc) ->
     component['defaultsSent'] = true
 
   resumeTaskQ = ->
-    if table.getn(component['completeParams']) == table.getn(component['requiredParams']) and
-    table.getn(component['taskQ']) > 0
+    if table.getn(component['completeParams']) == table.getn(component['requiredParams']) and table.getn(component['taskQ']) > 0
       -- Avoid looping when feeding the queue inside the queue itself
       temp = _.slice component['taskQ'],  0
       component['taskQ'] = {}
@@ -246,13 +245,11 @@ WirePattern = (component, config, proc) ->
         if inPort\isAddressable()
           component['params'][port] = {} unless  _.contains component['params'], port
           component['params'][port][index] = payload
-          if config['arrayPolicy']['params'] == 'all' and
-          table.getn(_.keys(component['params'][port])) < table.getn(inPort\listAttached())
+          if config['arrayPolicy']['params'] == 'all' and table.getn(_.keys(component['params'][port])) < table.getn(inPort\listAttached())
             return -- Need data on all array indexes to proceed
         else
           component['params'][port] = payload
-        if _.indexOf(component['completeParams'], port) == -1 and
-        _.indexOf(component['requiredParams'], port) > -1
+        if _.indexOf(component['completeParams'], port) == -1 and _.indexOf(component['requiredParams'], port) > -1
           _.push component['completeParams'],  port
         _.push component['receivedParams'],  port
         -- Trigger pending procs if all params are complete
@@ -363,8 +360,7 @@ WirePattern = (component, config, proc) ->
                       --reqId = grp
                       --break
                   --key = nil if reqId then reqId else ''
-              else if config['field'] and type(payload) == 'table' and
-              _.contains payload, config['field']
+              else if config['field'] and type(payload) == 'table' and  _.contains payload, config['field']
                 key = payload[config['field']]
               component['keyBuffers'][port] = key
 
@@ -380,10 +376,7 @@ WirePattern = (component, config, proc) ->
 
               for i in placebo
                 -- Check this buffered tuple if it's missing value for this port
-                if not (_.contains(component['groupedData'][key][i], port)) or
-                (component['inPorts'][port]\isAddressable() and
-                config['arrayPolicy']['in'] == 'all' and
-                not (_.contains(component['groupedData'][key][i][port], index)))
+                if not (_.contains(component['groupedData'][key][i], port)) or (component['inPorts'][port]\isAddressable() and config['arrayPolicy']['in'] == 'all' and not (_.contains(component['groupedData'][key][i][port], index)))
                   foundGroup = true
                   if component['inPorts'][port]\isAddressable()
                     -- Maintain indexes for addressable ports
@@ -399,10 +392,7 @@ WirePattern = (component, config, proc) ->
                     -- All the groups we need are here in this port
                     component['groupedGroups'][key][i][port] = component['groupBuffers'][port]
                   -- Addressable ports may require other indexes
-                  if component['inPorts'][port]\isAddressable() and
-                  config['arrayPolicy']['in'] == 'all' and
-                  table.getn(_.keys(component['groupedData'][key][i][port])) <
-                  table.getn(component['inPorts'][port]\listAttached())
+                  if component['inPorts'][port]\isAddressable() and config['arrayPolicy']['in'] == 'all' and table.getn(_.keys(component['groupedData'][key][i][port])) < table.getn(component['inPorts'][port]\listAttached())
                     return -- Need data on other array port indexes to arrive
 
                   groupLength = table.getn(_.keys(component['groupedData'][key][i]))
@@ -419,7 +409,7 @@ WirePattern = (component, config, proc) ->
                     table.remove(component['groupedData'], key) if table.getn(component['groupedData'][key])== 0
                     table.remove(component['groupedGroups'], key) if table.getn(component['groupedGroups'][key])== 0
                     if config['group'] and key
-                      delete component['gcTimestamps'][key]
+                      table.remove component['gcTimestamps'], key
                     break
                   else
                     return -- need more data to continue
@@ -431,10 +421,7 @@ WirePattern = (component, config, proc) ->
                   if obj[port] == nil then obj[port] = {} else obj[port][index] = payload
                 else
                   obj[port] = payload
-                if table.getn(inPorts) == 1 and
-                component['inPorts'][port]\isAddressable() and
-                (config['arrayPolicy']['in'] == 'any' or
-                table.getn(component['inPorts'][port]\listAttached())== 1)
+                if table.getn(inPorts) == 1 and component['inPorts'][port]\isAddressable() and (config['arrayPolicy']['in'] == 'any' or table.getn(component['inPorts'][port]\listAttached())== 1)
                   -- This packet is all we need
                   data = obj[port]
                   groups = component['groupBuffers'][port]
@@ -458,8 +445,7 @@ WirePattern = (component, config, proc) ->
             -- Prepare outputs
             outs = {}
             for name in outPorts
-              if config['async'] or config['sendStreams'] and
-              _.indexOf(config['sendStreams'], name) != -1
+              if config['async'] or config['sendStreams'] and _.indexOf(config['sendStreams'], name) != -1
                 outs[name] = StreamSender component['outPorts'][name], config['ordered']
               else
                 outs[name] = component['outPorts'][name]
@@ -610,3 +596,7 @@ MultiError = (component, group = '', errorPort = 'error', forwardedGroups = {}) 
     component['errors'] = {}
 
   return component
+
+_.push exports, :WirePattern, :MapComponent, :GroupedInput, :CustomizeError, :CustomError, :MultiError
+
+return exports

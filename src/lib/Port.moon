@@ -8,8 +8,8 @@ EventEmitter = require 'events'
 _ = require "moses"
 splice = require 'splice'
 Error = require 'Error'
-Allen = require 'Allen'
-Allen.import()
+--Allen = require 'Allen'
+--Allen.import()
 --require 'indexOf'
 
 
@@ -28,7 +28,7 @@ class Port extends EventEmitter
   getId: =>
     unless @node and @name
       return 'Port'
-    "#{@node}  #{string.capitalize @name}"
+    "#{@node}  #{string.upper @name}"
 
   getDataType: => @type
   getDescription: => @description
@@ -123,3 +123,7 @@ class Port extends EventEmitter
     attached
 
   canAttach: => true
+
+
+
+return Port

@@ -7,7 +7,7 @@
 --connections and even address them separately.
 port = require "Port"
 _ = require 'moses'
-class ArrayPort extends port.Port
+class ArrayPort extends port
   constructor: (@type) ->
     super @type
 

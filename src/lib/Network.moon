@@ -11,8 +11,8 @@ platform = require 'Platform'
 cron = require 'cron'
 require 'splice'
 Error = require "Error"
-Allen = require "Allen"
-Allen.import()
+--Allen = require "Allen"
+--Allen.import()
 --require 'indexOf'
 componentLoader = require 'ComponentLoader'
 
@@ -167,7 +167,7 @@ class Network extends EventEmitter
     unless @processes[node.id]
       return callback   Error "Node #{node.id} not found"
     @processes[node.id].component.shutdown()
-    delete @processes[node.id]
+    table.remove @processes, node.id
     callback nil if callback
 
   renameNode: (oldId,  Id, callback) =>

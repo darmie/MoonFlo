@@ -10,11 +10,11 @@ utils = require 'Utils'
 EventEmitter = require 'events'
 Error = require 'Error'
 _ = require 'moses'
-json = require "cjson"
+json = package.loadlib("cjson.dll", "") --require "cjson"
 re = require "luaregex"
 split = require "split"
-Allen = require "Allen"
-Allen.import()
+--Allen = require "Allen"
+--Allen.import()
 
 exports = {}
 
@@ -32,7 +32,7 @@ class ComponentLoader extends EventEmitter
     return '' unless name
     return '' if name =='moonflo'
     if name(1) == '@'
-      regex = re.compile([[@[a-z\-]+]])
+      regex = re.compile([[\@[a-z\-]+]])
       name = regex\sub('', name)
       --name = re.sub [[/\@[a-z\-]+\//]], '', name, 0
     --name = name.replace , '' if name[0] =='@'
@@ -43,8 +43,8 @@ class ComponentLoader extends EventEmitter
     _.push @checked, moduleName
     definition, err = require "/#{moduleName}/component.json"
     if err
-      if moduleName.sub(0, 1) =='/'
-        return @getModuleComponents "moonflo-#{moduleName.sub(1)}"
+      if string.sub(moduleName, 0, 1) =='/'
+        return @getModuleComponents "moonflo-#{string.sub(moduleName, 1)}"
       return
 
     for dependency in definition['dependencies']
@@ -58,7 +58,7 @@ class ComponentLoader extends EventEmitter
       @libraryIcons[prefix] = definition['moonflo']['icon']
 
     if moduleName[0] =='/'
-      moduleName = moduleName.sub 1
+      moduleName = string.sub moduleName, 1
     if definition['moonflo']['loader']
       -- Run a custom component loader
       loaderPath = "/#{moduleName}/#{definition['moonflo']['loader']}"
@@ -70,8 +70,8 @@ class ComponentLoader extends EventEmitter
         cpath = definition['moonflo']['components'][name]
         if _.indexOf(cPath, '.moon') != -1
           cPath = string.gsub(cPath, '.moon', '.lua')
-        if cPath.sub(0, 2) =='./'
-          cPath = cPath.sub 2
+        if string.sub(cpath, 0, 2) =='./'
+          cPath = string.sub cPath, 2
         @registerComponent prefix, name, "/#{moduleName}/#{cPath}"
     if definition['moonflo']['graphs']
       for name in definition['moonflo']['graphs']
@@ -272,7 +272,7 @@ class ComponentLoader extends EventEmitter
     component = @components[name]
     unless component
       -- Try an alias
-      for componentName of @components
+      for componentName in @components
         if split(componentName, '/')[2] ==name
           component = @components[componentName]
           name = componentName
@@ -299,14 +299,14 @@ class ComponentLoader extends EventEmitter
           language: 'json'
       return
 
-    path = window.require.resolve component --TODO: Lua equivalent
-    unless path
-      return callback Error "Component #{name} is not resolvable to a path"
-    callback nil,
-      name: nameParts[2]
-      library: nameParts[1]
-      code: window.require.modules[path].toString() --TODO: Lua equivalent
-      language: utils.guessLanguageFromFilename component
+    --path = window.require.resolve component --TODO: Lua equivalent
+    --unless path
+      --return callback Error "Component #{name} is not resolvable to a path"
+    --callback nil,
+      --name: nameParts[2]
+      --library: nameParts[1]
+      --code: window.require.modules[path].toString() --TODO: Lua equivalent
+      --language: utils.guessLanguageFromFilename component
 
   clear: =>
     @components = nil

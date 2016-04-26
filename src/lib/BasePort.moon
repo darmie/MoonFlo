@@ -5,8 +5,7 @@
 --Base port type used for options normalization
 EventEmitter = require 'events'
 _ = require "moses"
-Allen = require "Allen"
-Allen.import()
+
 validTypes = {
   'all'
   'string'
@@ -46,7 +45,7 @@ class BasePort extends EventEmitter
   getId: =>
     unless @node and @name
       return 'Port'
-    "#{@node} #{string.capitalize(@name)}"
+    "#{@node} #{string.upper(@name)}"
 
   getDataType: => @options['datatype']
   getDescription: => @options['description']

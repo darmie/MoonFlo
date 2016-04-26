@@ -9,22 +9,27 @@
 --Main APIs
 
 --Graph interface
---module "MoonFlo", package.seeall
-local exports = {}
+
+package.path = package.path  .. ';?.lua'
+package.moonpath = package.moonpath .. ';?.moon'
+require "moonscript"
+
+
+exports = {}
 -- Graph is used for instantiating FBP graph definitions.
 graph = require('Graph')
-exports['Graph'] = graph.Graph
+exports['Graph'] = graph
 
 -----Graph journal
 
 --Journal is used for keeping track of graph changes
 journal = require('Journal')
-exports['Journal'] = journal.Journal
+exports['Journal'] = journal
 
 --Network interface
 
 --Network is used for running NoFlo graphs.
-exports['Network'] = require('Network').Network
+exports['Network'] = require('Network')
 
 -- Platform detection
 
@@ -37,14 +42,14 @@ exports['Network'] = require('Network').Network
 --
 -- this will utilize the default Lua require function
 
-exports['ComponentLoader'] = require('ComponentLoader').ComponentLoader
+exports['ComponentLoader'] = require('ComponentLoader')
 
 --------Component baseclasses
 --
 --These baseclasses can be used for defining NoFlo components.
 
-exports['Component'] = require('Component').Component
-exports['AsyncComponent'] = require('AsyncComponent').AsyncComponent
+exports['Component'] = require('Component')
+exports['AsyncComponent'] = require('AsyncComponent')
 
 --------Component helpers
 --
@@ -62,8 +67,8 @@ exports['InPort'] = require 'InPort'
 exports['OutPort'] = require 'OutPort'
 
 
-exports['Port'] = require('Port').Port
-exports['ArrayPort'] = require('ArrayPort').ArrayPort
+exports['Port'] = require('Port')
+exports['ArrayPort'] = require('ArrayPort')
 
 --------MoonFlo sockets
 --
@@ -166,4 +171,4 @@ exports['loadFile']= (file, options, callback) ->
 exports['saveFile'] = (graph, file, callback) ->
   graph.save file, -> callback file
 
-return exports  
+return exports
